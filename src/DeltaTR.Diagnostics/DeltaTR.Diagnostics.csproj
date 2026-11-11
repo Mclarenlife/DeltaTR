@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DeltaTR.Telemetry.ACC/DeltaTR.Telemetry.ACC.csproj" />
+    <ProjectReference Include="../DeltaTR.Storage/DeltaTR.Storage.csproj" />
+    <ProjectReference Include="../DeltaTR.Engineer/DeltaTR.Engineer.csproj" />
+  </ItemGroup>
+</Project>

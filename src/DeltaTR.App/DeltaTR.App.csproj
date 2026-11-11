@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>WinExe</OutputType><UseWPF>true</UseWPF></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DeltaTR.Hardware.Moza/DeltaTR.Hardware.Moza.csproj" />
+    <ProjectReference Include="../DeltaTR.Telemetry.Simulators/DeltaTR.Telemetry.Simulators.csproj" />
+    <ProjectReference Include="../DeltaTR.Telemetry.ACC/DeltaTR.Telemetry.ACC.csproj" />
+    <ProjectReference Include="../DeltaTR.Storage/DeltaTR.Storage.csproj" />
+    <ProjectReference Include="../DeltaTR.Engineer/DeltaTR.Engineer.csproj" />
+    <ProjectReference Include="../DeltaTR.Voice/DeltaTR.Voice.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="../DeltaTR.Hardware.Moza/Assets/**/*" Link="Hardware/KsPro/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../../.tools/models/zipformer-zh-en/*.onnx;../../.tools/models/zipformer-zh-en/tokens.txt;../../.tools/models/zipformer-zh-en/bpe.vocab"
+             Link="models/zipformer-zh-en/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../../.tools/models/sensevoice/model.int8.onnx;../../.tools/models/sensevoice/tokens.txt"
+             Link="models/sensevoice/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <PackageReference Include="Vortice.DirectInput" Version="3.8.3" />
+  </ItemGroup>
+</Project>

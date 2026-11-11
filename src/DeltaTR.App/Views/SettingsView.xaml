@@ -1,0 +1,103 @@
+<UserControl x:Class="DeltaTR.App.Views.SettingsView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:views="clr-namespace:DeltaTR.App.Views">
+    <UserControl.Resources>
+        <DataTemplate x:Key="AudioChoice"><TextBlock Text="{Binding Name}" Foreground="{DynamicResource InputText}" TextTrimming="CharacterEllipsis"/></DataTemplate>
+    </UserControl.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
+        <Border Style="{StaticResource Card}"><StackPanel><TextBlock Text="数据源" Style="{StaticResource SectionTitle}"/><TextBlock Text="{Binding SourceDescription}" TextWrapping="Wrap" Style="{StaticResource Hint}" Margin="0,8,0,20"/><WrapPanel><Button Content="{Binding ConnectLabel}" Command="{Binding LiveCommand}" Style="{StaticResource Action}" Margin="0,0,12,8"/><Button Content="演示数据" Command="{Binding DemoCommand}" Style="{StaticResource Action}" Margin="0,0,12,8"/><Button Content="断开连接" Command="{Binding StopCommand}" Style="{StaticResource Action}" Margin="0,0,0,8"/></WrapPanel></StackPanel></Border>
+        <Border Visibility="{Binding AccFeatures, Converter={StaticResource BoolVisibility}}" Style="{StaticResource Card}" Margin="0,18,0,0"><StackPanel>
+            <TextBlock Text="ACC 赛事广播" Style="{StaticResource SectionTitle}"/>
+            <TextBlock Text="{Binding BroadcastStatus}" Style="{StaticResource Hint}" Margin="0,7,0,10"/>
+            <Button Content="启用游戏广播端口" Command="{Binding EnableBroadcastCommand}" Style="{StaticResource Action}" HorizontalAlignment="Left"
+                    ToolTip="在本机 ACC 的广播配置中开启端口 9000。更改后需要重启游戏。"/>
+        </StackPanel></Border>
+        <Border Visibility="{Binding NativeRaceFeatures, Converter={StaticResource BoolVisibility}}" Style="{StaticResource Card}" Margin="0,18,0,0"><StackPanel>
+            <TextBlock Text="赛事播报" Style="{StaticResource SectionTitle}"/>
+            <TextBlock Text="{Binding NativeRaceStatus}" Style="{StaticResource Hint}" Margin="0,7,0,4"/>
+            <TextBlock Text="使用游戏计时数据。按住讲话键询问“前车是谁”“比赛排名表”或“现在是什么旗”。" Style="{StaticResource Hint}" TextWrapping="Wrap"/>
+        </StackPanel></Border>
+        <Border Style="{StaticResource Card}" Margin="0,18,0,0"><StackPanel>
+            <TextBlock Text="赛事主动提醒" Style="{StaticResource SectionTitle}"/>
+            <ComboBox x:Name="AlertGameSelector" ItemsSource="{Binding AlertGames}" SelectedItem="{Binding AlertGame, Mode=TwoWay}" ItemTemplate="{StaticResource AudioChoice}" HorizontalAlignment="Left" MinWidth="175" Margin="0,12,0,8" Padding="6" AutomationProperties.Name="赛事提醒配置游戏"/>
+            <WrapPanel>
+                <CheckBox x:Name="YellowAlertChoice" Content="黄旗" IsChecked="{Binding AnnounceYellow}" Style="{StaticResource PreferenceCheck}" Margin="0,4,24,4"/>
+                <CheckBox Content="本车排名变化" IsChecked="{Binding AnnouncePosition}" Style="{StaticResource PreferenceCheck}" Margin="0,4,24,4"/>
+                <CheckBox Content="本车处罚" IsChecked="{Binding AnnouncePenalty}" Style="{StaticResource PreferenceCheck}" Margin="0,4,24,4"/>
+                <CheckBox Content="蓝旗" IsChecked="{Binding AnnounceBlue}" Style="{StaticResource PreferenceCheck}" Margin="0,4,24,4"/>
+                <CheckBox Content="黄旗解除" IsChecked="{Binding AnnounceGreen}" Style="{StaticResource PreferenceCheck}" Margin="0,4,24,4"/>
+                <CheckBox Content="进出维修区" IsChecked="{Binding AnnouncePit}" Style="{StaticResource PreferenceCheck}" Margin="0,4,24,4"/>
+                <CheckBox Content="完成一圈" IsChecked="{Binding AnnounceLap}" Style="{StaticResource PreferenceCheck}" Margin="0,4,24,4"/>
+                <CheckBox Content="比赛开始与结束" IsChecked="{Binding AnnounceSession}" Style="{StaticResource PreferenceCheck}" Margin="0,4,0,4"/>
+            </WrapPanel>
+            <TextBlock Text="选择游戏可单独配置。勾选后立即保存，进入驾驶后由工程师主动提醒。" Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+        </StackPanel></Border>
+        <Border Style="{StaticResource Card}" Margin="0,18,0,0"><StackPanel>
+            <TextBlock Text="显示与播报单位" Style="{StaticResource SectionTitle}"/>
+            <StackPanel Orientation="Horizontal" Margin="0,12,0,6">
+                <RadioButton x:Name="MetricChoice" Content="公制" GroupName="Units" IsChecked="{Binding MetricUnits, Mode=TwoWay}" Foreground="#E9EFF7" Margin="0,0,24,0"/>
+                <RadioButton x:Name="ImperialChoice" Content="英制" GroupName="Units" IsChecked="{Binding ImperialUnits, Mode=TwoWay}" Foreground="#E9EFF7"/>
+            </StackPanel>
+            <TextBlock Style="{StaticResource Hint}" TextWrapping="Wrap" Text="胎压始终使用 psi。公制使用 °C、km/h、L，英制使用 °F、mph、英制加仑。"/>
+        </StackPanel></Border>
+        <Border Style="{StaticResource Card}" Margin="0,18,0,0"><StackPanel><TextBlock Text="语音与无线电" Style="{StaticResource SectionTitle}"/>
+            <TextBlock Text="识别引擎" Margin="0,12,0,4"/>
+            <StackPanel Orientation="Horizontal" Margin="0,4,0,8">
+                <RadioButton x:Name="SenseVoiceEngineChoice" Content="SenseVoice（中文 · 离线）" GroupName="AsrEngine" IsChecked="{Binding UseSenseVoice, Mode=TwoWay}" Foreground="#E9EFF7" Margin="0,0,24,0"/>
+                <RadioButton x:Name="WindowsEngineChoice" Content="Windows 识别" GroupName="AsrEngine" IsChecked="{Binding UseWindowsRecognition, Mode=TwoWay}" Foreground="#E9EFF7" Margin="0,0,24,0"/>
+                <RadioButton x:Name="ZipformerEngineChoice" Content="Zipformer（离线）" GroupName="AsrEngine" IsChecked="{Binding UseZipformer, Mode=TwoWay}" Foreground="#E9EFF7"/>
+            </StackPanel>
+            <CheckBox Content="启用全局按键讲话" IsChecked="{Binding VoiceEnabled}" Style="{StaticResource PreferenceCheck}"/>
+            <WrapPanel Margin="0,8">
+                <TextBlock Text="讲话键位" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <TextBlock Text="{Binding BoundDeviceLabel}" VerticalAlignment="Center" Foreground="{StaticResource Accent}" Margin="0,0,16,0"/>
+                <Button x:Name="BindTalkButton" Content="{Binding BindButtonLabel}" Click="ToggleBinding" PreviewKeyDown="CaptureKey" Style="{StaticResource Action}" Padding="12,5"/>
+            </WrapPanel>
+            <TextBlock Text="{Binding BindingHelp}" Style="{StaticResource Hint}" TextWrapping="Wrap"/>
+            <CheckBox Content="语音播报工程师回答和赛事提醒" IsChecked="{Binding SpeakReplies}" Style="{StaticResource PreferenceCheck}"/>
+            <Grid Margin="0,14,0,6"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                <StackPanel Margin="0,0,12,0"><TextBlock Text="输入设备 · 麦克风"/><ComboBox ItemsSource="{Binding InputDevices}" SelectedItem="{Binding SelectedInput}" ItemTemplate="{StaticResource AudioChoice}" Margin="0,6,0,0" Padding="6" AutomationProperties.Name="输入设备"/></StackPanel>
+                <StackPanel Grid.Column="1"><TextBlock Text="输出设备 · 工程师播报"/><ComboBox ItemsSource="{Binding OutputDevices}" SelectedItem="{Binding SelectedOutput}" ItemTemplate="{StaticResource AudioChoice}" Margin="0,6,0,0" Padding="6" AutomationProperties.Name="输出设备"/></StackPanel>
+            </Grid>
+            <Button Content="刷新设备" Command="{Binding RefreshDevicesCommand}" Style="{StaticResource Action}" HorizontalAlignment="Left" Padding="10,5"/>
+            <WrapPanel Margin="0,8,0,0">
+                <CheckBox x:Name="EnhanceVoiceChoice" Content="语音增强" IsChecked="{Binding EnhanceVoice, Mode=TwoWay}" Style="{StaticResource PreferenceCheck}" Margin="0,4,24,4"/>
+                <CheckBox x:Name="ReduceNoiseChoice" Content="麦克风降噪" IsChecked="{Binding ReduceNoise, Mode=TwoWay}" Style="{StaticResource PreferenceCheck}" Margin="0,4,0,4"/>
+            </WrapPanel>
+            <TextBlock Style="{StaticResource Hint}" TextWrapping="Wrap" Text="增强轻声讲话，降噪减弱低频轰鸣和持续底噪。测试电平和输入阈值均使用处理后的声音。"/>
+            <UniformGrid Columns="2" Margin="0,16,0,0">
+                <StackPanel Margin="0,0,16,0"><TextBlock Text="{Binding InputThreshold, StringFormat=输入音量阈值  {0}%}"/><Slider x:Name="InputThresholdSlider" Value="{Binding InputThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Maximum="100" IsSnapToTickEnabled="True" Margin="0,8" AutomationProperties.Name="输入音量阈值"/></StackPanel>
+                <StackPanel IsEnabled="{Binding UseWindowsRecognition}"><TextBlock Text="{Binding Confidence, StringFormat=Windows 识别置信度  {0}%}"/><Slider Value="{Binding Confidence}" Minimum="1" Maximum="100" IsSnapToTickEnabled="True" Margin="0,8" AutomationProperties.Name="识别置信度"/></StackPanel>
+            </UniformGrid>
+            <TextBlock Text="{Binding LastInput}" Foreground="{StaticResource Accent}" TextWrapping="Wrap" Margin="0,6"/>
+            <Grid Margin="0,4,0,6">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="48"/></Grid.ColumnDefinitions>
+                <Button Content="{Binding TestMicrophoneLabel}" Command="{Binding TestMicrophoneCommand}" IsEnabled="{Binding CanTestMicrophone}" Style="{StaticResource Action}" Padding="12,7"/>
+                <Grid Grid.Column="1" Margin="14,0,0,0" Height="16" VerticalAlignment="Center">
+                    <ProgressBar x:Name="RawInputMeter" Height="9" Maximum="100" Value="{Binding AudioLevel, Mode=OneWay}" Background="#263642" Foreground="#8192A3" BorderThickness="0" AutomationProperties.Name="麦克风输入电平"/>
+                    <ProgressBar x:Name="AcceptedInputMeter" Height="9" Maximum="100" Value="{Binding AcceptedInputLevel, Mode=OneWay}" Background="Transparent" Foreground="{StaticResource Accent}" BorderThickness="0" AutomationProperties.Name="达到阈值的输入电平"/>
+                    <views:InputThresholdMarker x:Name="ThresholdLine" Threshold="{Binding InputThreshold}" IsHitTestVisible="False"/>
+                </Grid>
+                <TextBlock Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Text="{Binding AudioLevel, StringFormat={}{0:0.0}%}"/>
+            </Grid>
+            <TextBlock Text="{Binding InputMeterStatus}" Style="{StaticResource Hint}" Margin="0,2,0,0"/>
+            <TextBlock Text="{Binding RecognitionDescription}" TextWrapping="Wrap" Style="{StaticResource Hint}" Margin="0,10,0,4"/><TextBlock Text="{Binding OutputDescription}" Style="{StaticResource Hint}"/>
+            <Grid Margin="0,18,0,12"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="220"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="播报音量" VerticalAlignment="Center" Margin="0,0,18,0"/><Slider Grid.Column="1" Value="{Binding Volume}" Minimum="0" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" AutomationProperties.Name="播报音量"/><Button Grid.Column="2" Content="测试播报" Command="{Binding TestSpeakerCommand}" Style="{StaticResource Action}" HorizontalAlignment="Right"/></Grid>
+            <TextBlock Text="在本页也可以按住所选讲话键试说。输入音量低于阈值时可降低音量阈值；能听到文字但被拒绝时可调整识别置信度。" Style="{StaticResource Hint}" FontSize="11"/>
+        </StackPanel></Border>
+        <Border Style="{StaticResource Card}" Margin="0,18,0,0"><StackPanel>
+            <TextBlock Text="AI 对话" Style="{StaticResource SectionTitle}"/>
+            <TextBlock Text="每次以唤醒词开头才会向所填接口发送问题、近期 AI 对话和本次可用遥测。请使用兼容 Chat Completions 的服务。" Style="{StaticResource Hint}" Margin="0,8,0,14"/>
+            <TextBlock Text="唤醒词"/><TextBox Text="{Binding WakeWordEdit, UpdateSourceTrigger=PropertyChanged}" MaxLength="24" Margin="0,4,0,12" AutomationProperties.Name="唤醒词"/>
+            <TextBlock Text="API 地址（基础地址或完整的 /chat/completions 地址）"/><TextBox Text="{Binding ApiAddress, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,12" AutomationProperties.Name="API 地址"/>
+            <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                <StackPanel Margin="0,0,12,0"><TextBlock Text="模型名称"/><TextBox Text="{Binding ApiModel, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0" AutomationProperties.Name="模型名称"/></StackPanel>
+                <StackPanel Grid.Column="1"><TextBlock Text="API 密钥（本机免认证服务可留空）"/><PasswordBox x:Name="KeyInput" PasswordChanged="KeyChanged" Padding="8" Margin="0,4,0,0" AutomationProperties.Name="API 密钥"/></StackPanel>
+            </Grid>
+            <Button Content="保存设置" Command="{Binding SaveSettingsCommand}" Style="{StaticResource PrimaryAction}" HorizontalAlignment="Left" Margin="0,16,0,8"/>
+            <TextBlock Text="{Binding SettingsStatus}" Style="{StaticResource Hint}"/>
+        </StackPanel></Border>
+        <Expander Header="高级 · 遥测字段检查" Foreground="#91A5B8" Margin="4,22,4,0"><StackPanel><views:TelemetryView Height="400" Margin="0,16,0,0"/>
+            <WrapPanel Visibility="{Binding AccFeatures, Converter={StaticResource BoolVisibility}}" Margin="0,10"><Button Content="开发核验" Command="{Binding CalibrationWizardCommand}" Style="{StaticResource Action}" Margin="0,0,12,0"/><Button Content="加载旧核验配置" Command="{Binding CalibrationCommand}" Style="{StaticResource Action}"/></WrapPanel>
+        </StackPanel></Expander>
+        <TextBlock Text="DeltaTR 0.13.4 · 本地车队无线电 · 不控制车辆" Style="{StaticResource Eyebrow}" Margin="4,22,4,10"/>
+    </StackPanel></ScrollViewer>
+</UserControl>

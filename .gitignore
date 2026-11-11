@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+.tools/
+.vs/
+artifacts/
+recordings/
+config/*.local.json
+*.user
+*.suo
+__pycache__/
+*.pyc

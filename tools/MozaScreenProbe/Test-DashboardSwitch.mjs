@@ -1,0 +1,31 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const source=fs.readFileSync(new URL('../../src/DeltaTR.Hardware.Moza/PitHouseDashboard.js',import.meta.url),'utf8');
+const radio='deltatr-ks-pro-radio-20261110-v3';
+let clock=1000, ids=['stock',radio,'second'], calls=[];
+const manager={index:0,resetBusy:false,applyDashboard(index){calls.push(index);this.index=index;}};
+const screen={connectedState:true,controllerInfo:{productType:'W18 Display',mcuUid:'wheel'}};
+const env=vm.createContext({console, Date:{now:()=>clock},ScreenProgramManager:{program:p=>p},MOZARacing:{QByteArrayToHex:s=>s},ResourceManagerProxy:{resourceManagerMap:{wheel:manager}},
+    deltaTrBridgeTimer:{},Qt:{createQmlObject(qml){if(qml.includes('ValidBase'))return {bases:{controllerProxies:[{programs:{16:screen}}]},hubs:{controllerProxies:[]}};return {get ids(){return ids;},radioIds(){return [radio];},destroy(){}};}}});
+vm.runInContext(source,env);
+const control=env.createDeltaTrDashboardSwitch();
+control.update('return','s:1');assert.equal(calls.length,0);
+control.update('radio','s:2');assert.equal(manager.index,1);
+control.update('radio','s:2');assert.equal(control.status(),'radio');assert.equal(calls.length,1);
+control.update('return','s:3');assert.equal(manager.index,0);
+control.update('return','s:3');assert.equal(control.status(),'race');assert.equal(calls.length,2);
+manager.index=2;control.update('radio','s:4');control.update('radio','s:4');
+ids=['second','stock',radio];manager.index=2; // Device ordering changes while the overlay is visible.
+control.release();assert.equal(manager.index,0,'restore by stable ID, never the old numeric index');control.release();
+control.update('radio','s:5');control.update('radio','s:5');manager.index=1;
+control.update('radio','s:5');assert.equal(control.status(),'external');
+const afterManual=calls.length;control.update('radio','s:5');control.release();assert.equal(calls.length,afterManual,'respect external switching');
+control.update('radio','s:6');control.update('radio','s:6');
+control.release();assert.equal(manager.index,1,'host loss returns the original dashboard');control.release();
+manager.applyDashboard=function(index){calls.push(index);};
+control.update('radio','s:7');clock+=2600;control.update('radio','s:7');assert.equal(control.status(),'timeout');
+const afterTimeout=calls.length;control.update('radio','s:7');assert.equal(calls.length,afterTimeout,'no retry storm');
+screen.connectedState=false;control.update('radio','s:8');assert.equal(control.status(),'device');
+screen.connectedState=true;ids=['stock'];manager.index=0;control.update('radio','s:9');assert.equal(control.status(),'dashboard');assert.equal(calls.length,afterTimeout);
+console.log('PASS dashboard switching: current dashboard, return by ID, reordering, external override, host loss, timeout, disconnect and missing assets');

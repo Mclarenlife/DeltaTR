@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DeltaTR.Hardware.Moza/DeltaTR.Hardware.Moza.csproj" />
+    <Project Path="src/DeltaTR.Core/DeltaTR.Core.csproj" />
+    <Project Path="src/DeltaTR.Telemetry.Abstractions/DeltaTR.Telemetry.Abstractions.csproj" />
+    <Project Path="src/DeltaTR.Telemetry.ACC/DeltaTR.Telemetry.ACC.csproj" />
+    <Project Path="src/DeltaTR.Telemetry.Simulators/DeltaTR.Telemetry.Simulators.csproj" />
+    <Project Path="src/DeltaTR.Storage/DeltaTR.Storage.csproj" />
+    <Project Path="src/DeltaTR.Engineer/DeltaTR.Engineer.csproj" />
+    <Project Path="src/DeltaTR.Voice/DeltaTR.Voice.csproj" />
+    <Project Path="src/DeltaTR.Diagnostics/DeltaTR.Diagnostics.csproj" />
+    <Project Path="src/DeltaTR.App/DeltaTR.App.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DeltaTR.Tests/DeltaTR.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/MozaBridgeSetup/MozaBridgeSetup.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,414 @@
+{
+    "actions": {
+    },
+    "binding": {
+    },
+    "borderStyle": {
+        "allBorders": 0,
+        "allCornerRadius": 0,
+        "borderColor": {
+            "color": "#00000000",
+            "type": "SOLID"
+        },
+        "bordersBottom": 0,
+        "bordersLeft": 0,
+        "bordersRight": 0,
+        "bordersTop": 0,
+        "radiusBottomLeft": 0,
+        "radiusBottomRight": 0,
+        "radiusTopLeft": 0,
+        "radiusTopRight": 0
+    },
+    "children": [
+        {
+            "actions": {
+            },
+            "binding": {
+            },
+            "borderStyle": {
+                "allBorders": 0,
+                "allCornerRadius": 0,
+                "borderColor": {
+                    "color": "#00000000",
+                    "type": "SOLID"
+                },
+                "bordersBottom": 0,
+                "bordersLeft": 0,
+                "bordersRight": 0,
+                "bordersTop": 0,
+                "radiusBottomLeft": 0,
+                "radiusBottomRight": 0,
+                "radiusTopLeft": 0,
+                "radiusTopRight": 0
+            },
+            "children": [
+                {
+                    "actions": {
+                    },
+                    "binding": {
+                    },
+                    "borderStyle": {
+                        "allBorders": 0,
+                        "allCornerRadius": 0,
+                        "borderColor": {
+                            "color": "#00000000",
+                            "type": "SOLID"
+                        },
+                        "bordersBottom": 0,
+                        "bordersLeft": 0,
+                        "bordersRight": 0,
+                        "bordersTop": 0,
+                        "radiusBottomLeft": 0,
+                        "radiusBottomRight": 0,
+                        "radiusTopLeft": 0,
+                        "radiusTopRight": 0
+                    },
+                    "children": [
+                    ],
+                    "effect": {
+                        "blinkDelay": 250,
+                        "blinkEnabled": false,
+                        "blurRadius": 0,
+                        "gravitySensorEnabled": false,
+                        "opacity": 100,
+                        "outerShadow": {
+                            "blur": 0,
+                            "color": {
+                                "color": "#00000000",
+                                "type": "SOLID"
+                            },
+                            "depth": 0,
+                            "direction": 0
+                        },
+                        "rotation": 0
+                    },
+                    "general": {
+                        "backgroundColor": {
+                            "color": "#00000000",
+                            "type": "SOLID"
+                        },
+                        "borderColor": {
+                            "color": "#00000000",
+                            "type": "SOLID"
+                        },
+                        "borderRadius": 0,
+                        "borderWidth": 0,
+                        "height": 48,
+                        "locked": false,
+                        "visible": true,
+                        "width": 748,
+                        "x": 16,
+                        "y": 8
+                    },
+                    "id": 1001,
+                    "macros": {
+                    },
+                    "name": "DeltaTR 中文屏幕验证",
+                    "plugins": [
+                    ],
+                    "text": {
+                        "fontColor": {
+                            "color": "#FFA3E4C8",
+                            "type": "SOLID"
+                        },
+                        "fontFamily": "Source Han Sans CN",
+                        "fontSize": 28,
+                        "fontWeight": 500,
+                        "horizontalAlignment": "AlignLeft",
+                        "paddingBottom": 0,
+                        "paddingLeft": 0,
+                        "paddingRight": 0,
+                        "paddingTop": 0,
+                        "text": "DeltaTR 中文屏幕验证",
+                        "verticalAlignment": "AlignCenter",
+                        "wrapText": true
+                    },
+                    "textEffect": {
+                        "shadowBlur": 0,
+                        "shadowColor": {
+                            "color": "#00000000",
+                            "type": "SOLID"
+                        },
+                        "shadowDepth": 0,
+                        "shadowDirection": 0
+                    },
+                    "type": "Text.qml"
+                },
+                {
+                    "actions": {
+                    },
+                    "binding": {
+                        "text.text": {
+                            "methods": [
+                                "Telemetry.get(\"v1/gameData/PlayerName\").value",
+                                "_result ? String(_result) : \"等待实时中文回答\""
+                            ],
+                            "type": "METHOD_CHAINING"
+                        }
+                    },
+                    "borderStyle": {
+                        "allBorders": 0,
+                        "allCornerRadius": 0,
+                        "borderColor": {
+                            "color": "#00000000",
+                            "type": "SOLID"
+                        },
+                        "bordersBottom": 0,
+                        "bordersLeft": 0,
+                        "bordersRight": 0,
+                        "bordersTop": 0,
+                        "radiusBottomLeft": 0,
+                        "radiusBottomRight": 0,
+                        "radiusTopLeft": 0,
+                        "radiusTopRight": 0
+                    },
+                    "children": [
+                    ],
+                    "effect": {
+                        "blinkDelay": 250,
+                        "blinkEnabled": false,
+                        "blurRadius": 0,
+                        "gravitySensorEnabled": false,
+                        "opacity": 100,
+                        "outerShadow": {
+                            "blur": 0,
+                            "color": {
+                                "color": "#00000000",
+                                "type": "SOLID"
+                            },
+                            "depth": 0,
+                            "direction": 0
+                        },
+                        "rotation": 0
+                    },
+                    "general": {
+                        "backgroundColor": {
+                            "color": "#00000000",
+                            "type": "SOLID"
+                        },
+                        "borderColor": {
+                            "color": "#00000000",
+                            "type": "SOLID"
+                        },
+                        "borderRadius": 0,
+                        "borderWidth": 0,
+                        "height": 128,
+                        "locked": false,
+                        "visible": true,
+                        "width": 748,
+                        "x": 16,
+                        "y": 62
+                    },
+                    "id": 1002,
+                    "macros": {
+                    },
+                    "name": "等待实时中文回答",
+                    "plugins": [
+                    ],
+                    "text": {
+                        "fontColor": {
+                            "color": "#FFFFFFFF",
+                            "type": "SOLID"
+                        },
+                        "fontFamily": "Source Han Sans CN",
+                        "fontSize": 34,
+                        "fontWeight": 500,
+                        "horizontalAlignment": "AlignLeft",
+                        "paddingBottom": 0,
+                        "paddingLeft": 0,
+                        "paddingRight": 0,
+                        "paddingTop": 0,
+                        "text": "等待实时中文回答",
+                        "verticalAlignment": "AlignCenter",
+                        "wrapText": true
+                    },
+                    "textEffect": {
+                        "shadowBlur": 0,
+                        "shadowColor": {
+                            "color": "#00000000",
+                            "type": "SOLID"
+                        },
+                        "shadowDepth": 0,
+                        "shadowDirection": 0
+                    },
+                    "type": "Text.qml"
+                },
+                {
+                    "actions": {
+                    },
+                    "binding": {
+                    },
+                    "borderStyle": {
+                        "allBorders": 0,
+                        "allCornerRadius": 0,
+                        "borderColor": {
+                            "color": "#00000000",
+                            "type": "SOLID"
+                        },
+                        "bordersBottom": 0,
+                        "bordersLeft": 0,
+                        "bordersRight": 0,
+                        "bordersTop": 0,
+                        "radiusBottomLeft": 0,
+                        "radiusBottomRight": 0,
+                        "radiusTopLeft": 0,
+                        "radiusTopRight": 0
+                    },
+                    "children": [
+                    ],
+                    "effect": {
+                        "blinkDelay": 250,
+                        "blinkEnabled": false,
+                        "blurRadius": 0,
+                        "gravitySensorEnabled": false,
+                        "opacity": 100,
+                        "outerShadow": {
+                            "blur": 0,
+                            "color": {
+                                "color": "#00000000",
+                                "type": "SOLID"
+                            },
+                            "depth": 0,
+                            "direction": 0
+                        },
+                        "rotation": 0
+                    },
+                    "general": {
+                        "backgroundColor": {
+                            "color": "#00000000",
+                            "type": "SOLID"
+                        },
+                        "borderColor": {
+                            "color": "#00000000",
+                            "type": "SOLID"
+                        },
+                        "borderRadius": 0,
+                        "borderWidth": 0,
+                        "height": 32,
+                        "locked": false,
+                        "visible": true,
+                        "width": 748,
+                        "x": 16,
+                        "y": 202
+                    },
+                    "id": 1003,
+                    "macros": {
+                    },
+                    "name": "测试消息 · 非真实遥测",
+                    "plugins": [
+                    ],
+                    "text": {
+                        "fontColor": {
+                            "color": "#FF9EAFC0",
+                            "type": "SOLID"
+                        },
+                        "fontFamily": "Source Han Sans CN",
+                        "fontSize": 20,
+                        "fontWeight": 500,
+                        "horizontalAlignment": "AlignLeft",
+                        "paddingBottom": 0,
+                        "paddingLeft": 0,
+                        "paddingRight": 0,
+                        "paddingTop": 0,
+                        "text": "测试消息 · 非真实遥测",
+                        "verticalAlignment": "AlignCenter",
+                        "wrapText": true
+                    },
+                    "textEffect": {
+                        "shadowBlur": 0,
+                        "shadowColor": {
+                            "color": "#00000000",
+                            "type": "SOLID"
+                        },
+                        "shadowDepth": 0,
+                        "shadowDirection": 0
+                    },
+                    "type": "Text.qml"
+                }
+            ],
+            "effect": {
+                "blinkDelay": 250,
+                "blinkEnabled": false,
+                "blurRadius": 0,
+                "gravitySensorEnabled": false,
+                "opacity": 100,
+                "rotation": 0
+            },
+            "general": {
+                "backgroundColor": {
+                    "color": "#FF000000",
+                    "type": "SOLID"
+                },
+                "borderColor": {
+                    "color": "#00000000",
+                    "type": "SOLID"
+                },
+                "borderRadius": 0,
+                "borderWidth": 0,
+                "height": 248,
+                "locked": false,
+                "visible": true,
+                "width": 780,
+                "x": 0,
+                "y": 0
+            },
+            "guides": [
+            ],
+            "id": 1,
+            "image": {
+                "src": ""
+            },
+            "macros": {
+            },
+            "name": "DeltaTR Screen Probe",
+            "plugins": [
+            ],
+            "type": "Screen.qml"
+        }
+    ],
+    "effect": {
+        "gravitySensorEnabled": false,
+        "rotation": 0
+    },
+    "general": {
+        "backgroundColor": {
+            "color": "#FF000000",
+            "type": "SOLID"
+        },
+        "borderColor": {
+            "color": "#00000000",
+            "type": "SOLID"
+        },
+        "borderRadius": 0,
+        "borderWidth": 0,
+        "height": 248,
+        "locked": false,
+        "visible": true,
+        "width": 780,
+        "x": 0,
+        "y": 0
+    },
+    "id": 0,
+    "imageResources": [
+    ],
+    "lastModified": 1794292552,
+    "macros": {
+    },
+    "name": "DeltaTR Screen Probe",
+    "plugins": [
+    ],
+    "type": "Window.qml",
+    "version": "1.1.1",
+    "window": {
+        "GUID": "jaCQNdD0DtLhlAKSUjMVyUOj3Pev3PlR",
+        "defaultScreenId": 0,
+        "idealDeviceInfos": [
+            {
+                "deviceId": 8,
+                "hardwareVersion": "RS21-W18-HW RGB-DU-V11",
+                "networkId": 1,
+                "productType": "W18 Display"
+            }
+        ]
+    }
+}

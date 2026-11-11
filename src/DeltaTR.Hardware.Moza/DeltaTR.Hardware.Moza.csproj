@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><PackageReference Include="System.IO.Ports" Version="10.0.0" /></ItemGroup>
+  <ItemGroup><EmbeddedResource Include="PitHouseBridge.qml" /><EmbeddedResource Include="PitHouseDashboard.js" /></ItemGroup>
+</Project>

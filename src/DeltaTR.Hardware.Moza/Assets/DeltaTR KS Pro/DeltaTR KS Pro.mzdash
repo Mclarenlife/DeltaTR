@@ -1,0 +1,633 @@
+{
+  "actions": {},
+  "binding": {},
+  "borderStyle": {
+    "allBorders": 0,
+    "allCornerRadius": 0,
+    "borderColor": {
+      "color": "#00000000",
+      "type": "SOLID"
+    },
+    "bordersBottom": 0,
+    "bordersLeft": 0,
+    "bordersRight": 0,
+    "bordersTop": 0,
+    "radiusBottomLeft": 0,
+    "radiusBottomRight": 0,
+    "radiusTopLeft": 0,
+    "radiusTopRight": 0
+  },
+  "children": [
+    {
+      "actions": {},
+      "binding": {},
+      "borderStyle": {
+        "allBorders": 0,
+        "allCornerRadius": 0,
+        "borderColor": {
+          "color": "#00000000",
+          "type": "SOLID"
+        },
+        "bordersBottom": 0,
+        "bordersLeft": 0,
+        "bordersRight": 0,
+        "bordersTop": 0,
+        "radiusBottomLeft": 0,
+        "radiusBottomRight": 0,
+        "radiusTopLeft": 0,
+        "radiusTopRight": 0
+      },
+      "children": [
+        {
+          "actions": {},
+          "binding": {
+            "general.visible": {
+              "type": "METHOD_CHAINING",
+              "methods": [
+                "Telemetry.get(\"v1/gameData/DeltaTRRadio\").value",
+                "String(_result || \"\").split(\"|\")[0] === \"idle\""
+              ]
+            }
+          },
+          "borderStyle": {
+            "allBorders": 0,
+            "allCornerRadius": 0,
+            "borderColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "bordersBottom": 0,
+            "bordersLeft": 0,
+            "bordersRight": 0,
+            "bordersTop": 0,
+            "radiusBottomLeft": 0,
+            "radiusBottomRight": 0,
+            "radiusTopLeft": 0,
+            "radiusTopRight": 0
+          },
+          "children": [],
+          "effect": {
+            "blinkDelay": 250,
+            "blinkEnabled": false,
+            "blurRadius": 0,
+            "gravitySensorEnabled": false,
+            "opacity": 100,
+            "outerShadow": {
+              "blur": 0,
+              "color": {
+                "color": "#00000000",
+                "type": "SOLID"
+              },
+              "depth": 0,
+              "direction": 0
+            },
+            "rotation": 0
+          },
+          "general": {
+            "backgroundColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "borderColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "borderRadius": 0,
+            "borderWidth": 0,
+            "height": 248,
+            "locked": false,
+            "visible": true,
+            "width": 780,
+            "x": 0,
+            "y": 0
+          },
+          "id": 2100,
+          "macros": {},
+          "name": "Wave idle",
+          "plugins": [],
+          "type": "Image.qml",
+          "image": {
+            "src": "MD5/9ed35eba074ad3e7738fa3c48c49be1b.gif"
+          }
+        },
+        {
+          "actions": {},
+          "binding": {
+            "general.visible": {
+              "type": "METHOD_CHAINING",
+              "methods": [
+                "Telemetry.get(\"v1/gameData/DeltaTRRadio\").value",
+                "![\"idle\",\"reply\"].includes(String(_result || \"\").split(\"|\")[0])"
+              ]
+            }
+          },
+          "borderStyle": {
+            "allBorders": 0,
+            "allCornerRadius": 0,
+            "borderColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "bordersBottom": 0,
+            "bordersLeft": 0,
+            "bordersRight": 0,
+            "bordersTop": 0,
+            "radiusBottomLeft": 0,
+            "radiusBottomRight": 0,
+            "radiusTopLeft": 0,
+            "radiusTopRight": 0
+          },
+          "children": [],
+          "effect": {
+            "blinkDelay": 250,
+            "blinkEnabled": false,
+            "blurRadius": 0,
+            "gravitySensorEnabled": false,
+            "opacity": 100,
+            "outerShadow": {
+              "blur": 0,
+              "color": {
+                "color": "#00000000",
+                "type": "SOLID"
+              },
+              "depth": 0,
+              "direction": 0
+            },
+            "rotation": 0
+          },
+          "general": {
+            "backgroundColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "borderColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "borderRadius": 0,
+            "borderWidth": 0,
+            "height": 248,
+            "locked": false,
+            "visible": true,
+            "width": 780,
+            "x": 0,
+            "y": 0
+          },
+          "id": 2101,
+          "macros": {},
+          "name": "Wave listen",
+          "plugins": [],
+          "type": "Image.qml",
+          "image": {
+            "src": "MD5/a04f815f0b8d76198078b934da832d38.gif"
+          }
+        },
+        {
+          "actions": {},
+          "binding": {
+            "general.visible": {
+              "type": "METHOD_CHAINING",
+              "methods": [
+                "Telemetry.get(\"v1/gameData/DeltaTRRadio\").value",
+                "String(_result || \"\").split(\"|\")[0] === \"reply\""
+              ]
+            }
+          },
+          "borderStyle": {
+            "allBorders": 0,
+            "allCornerRadius": 0,
+            "borderColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "bordersBottom": 0,
+            "bordersLeft": 0,
+            "bordersRight": 0,
+            "bordersTop": 0,
+            "radiusBottomLeft": 0,
+            "radiusBottomRight": 0,
+            "radiusTopLeft": 0,
+            "radiusTopRight": 0
+          },
+          "children": [],
+          "effect": {
+            "blinkDelay": 250,
+            "blinkEnabled": false,
+            "blurRadius": 0,
+            "gravitySensorEnabled": false,
+            "opacity": 100,
+            "outerShadow": {
+              "blur": 0,
+              "color": {
+                "color": "#00000000",
+                "type": "SOLID"
+              },
+              "depth": 0,
+              "direction": 0
+            },
+            "rotation": 0
+          },
+          "general": {
+            "backgroundColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "borderColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "borderRadius": 0,
+            "borderWidth": 0,
+            "height": 248,
+            "locked": false,
+            "visible": true,
+            "width": 780,
+            "x": 0,
+            "y": 0
+          },
+          "id": 2102,
+          "macros": {},
+          "name": "Wave reply",
+          "plugins": [],
+          "type": "Image.qml",
+          "image": {
+            "src": "MD5/5a391a0ef9790112f86cd852e870cbcd.gif"
+          }
+        },
+        {
+          "actions": {},
+          "binding": {
+            "text.text": {
+              "type": "METHOD_CHAINING",
+              "methods": [
+                "Telemetry.get(\"v1/gameData/DeltaTRRadio\").value",
+                "({listen:\"正在聆听\",think:\"正在处理\",reply:\"车队工程师\",offline:\"无线电未连接\"})[String(_result || \"\").split(\"|\")[0]] || \"DELTATR\""
+              ]
+            }
+          },
+          "borderStyle": {
+            "allBorders": 0,
+            "allCornerRadius": 0,
+            "borderColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "bordersBottom": 0,
+            "bordersLeft": 0,
+            "bordersRight": 0,
+            "bordersTop": 0,
+            "radiusBottomLeft": 0,
+            "radiusBottomRight": 0,
+            "radiusTopLeft": 0,
+            "radiusTopRight": 0
+          },
+          "children": [],
+          "effect": {
+            "blinkDelay": 250,
+            "blinkEnabled": false,
+            "blurRadius": 0,
+            "gravitySensorEnabled": false,
+            "opacity": 100,
+            "outerShadow": {
+              "blur": 0,
+              "color": {
+                "color": "#00000000",
+                "type": "SOLID"
+              },
+              "depth": 0,
+              "direction": 0
+            },
+            "rotation": 0
+          },
+          "general": {
+            "backgroundColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "borderColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "borderRadius": 0,
+            "borderWidth": 0,
+            "height": 28,
+            "locked": false,
+            "visible": true,
+            "width": 700,
+            "x": 40,
+            "y": 18
+          },
+          "id": 2200,
+          "macros": {},
+          "name": "Centered state",
+          "plugins": [],
+          "text": {
+            "fontColor": {
+              "color": "#FF7E9B9F",
+              "type": "SOLID"
+            },
+            "fontFamily": "Source Han Sans CN",
+            "fontSize": 18,
+            "fontWeight": 500,
+            "horizontalAlignment": "AlignCenter",
+            "paddingBottom": 0,
+            "paddingLeft": 0,
+            "paddingRight": 0,
+            "paddingTop": 0,
+            "text": "DELTATR",
+            "verticalAlignment": "AlignCenter",
+            "wrapText": true
+          },
+          "textEffect": {
+            "shadowBlur": 0,
+            "shadowColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "shadowDepth": 0,
+            "shadowDirection": 0
+          },
+          "type": "Text.qml"
+        },
+        {
+          "actions": {},
+          "binding": {
+            "text.text": {
+              "type": "METHOD_CHAINING",
+              "methods": [
+                "Telemetry.get(\"v1/gameData/DeltaTRRadio\").value",
+                "String(_result || \"\").includes(\"|\") ? String(_result).substring(String(_result).indexOf(\"|\")+1) : \"等待 DeltaTR 连接\""
+              ]
+            },
+            "general.visible": {
+              "type": "METHOD_CHAINING",
+              "methods": [
+                "Telemetry.get(\"v1/gameData/DeltaTRRadio\").value",
+                "String(_result || \"\").split(\"|\")[0] !== \"idle\""
+              ]
+            }
+          },
+          "borderStyle": {
+            "allBorders": 0,
+            "allCornerRadius": 0,
+            "borderColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "bordersBottom": 0,
+            "bordersLeft": 0,
+            "bordersRight": 0,
+            "bordersTop": 0,
+            "radiusBottomLeft": 0,
+            "radiusBottomRight": 0,
+            "radiusTopLeft": 0,
+            "radiusTopRight": 0
+          },
+          "children": [],
+          "effect": {
+            "blinkDelay": 250,
+            "blinkEnabled": false,
+            "blurRadius": 0,
+            "gravitySensorEnabled": false,
+            "opacity": 100,
+            "outerShadow": {
+              "blur": 0,
+              "color": {
+                "color": "#00000000",
+                "type": "SOLID"
+              },
+              "depth": 0,
+              "direction": 0
+            },
+            "rotation": 0
+          },
+          "general": {
+            "backgroundColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "borderColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "borderRadius": 0,
+            "borderWidth": 0,
+            "height": 108,
+            "locked": false,
+            "visible": true,
+            "width": 676,
+            "x": 52,
+            "y": 70
+          },
+          "id": 2201,
+          "macros": {},
+          "name": "Centered live transcript and answer",
+          "plugins": [],
+          "text": {
+            "fontColor": {
+              "color": "#FFF2F8F7",
+              "type": "SOLID"
+            },
+            "fontFamily": "Source Han Sans CN",
+            "fontSize": 30,
+            "fontWeight": 500,
+            "horizontalAlignment": "AlignCenter",
+            "paddingBottom": 0,
+            "paddingLeft": 0,
+            "paddingRight": 0,
+            "paddingTop": 0,
+            "text": "等待 DeltaTR 连接",
+            "verticalAlignment": "AlignCenter",
+            "wrapText": true
+          },
+          "textEffect": {
+            "shadowBlur": 0,
+            "shadowColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "shadowDepth": 0,
+            "shadowDirection": 0
+          },
+          "type": "Text.qml"
+        },
+        {
+          "actions": {},
+          "binding": {
+            "text.text": {
+              "type": "METHOD_CHAINING",
+              "methods": [
+                "Telemetry.get(\"v1/gameData/DeltaTRRadio\").value",
+                "({listen:\"识别预览 · 松开发送\",think:\"等待确认与回复\",reply:\"DELTATR  /  TEAM RADIO\",offline:\"连接游戏或启动演示\"})[String(_result || \"\").split(\"|\")[0]] || \"TEAM RADIO\""
+              ]
+            }
+          },
+          "borderStyle": {
+            "allBorders": 0,
+            "allCornerRadius": 0,
+            "borderColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "bordersBottom": 0,
+            "bordersLeft": 0,
+            "bordersRight": 0,
+            "bordersTop": 0,
+            "radiusBottomLeft": 0,
+            "radiusBottomRight": 0,
+            "radiusTopLeft": 0,
+            "radiusTopRight": 0
+          },
+          "children": [],
+          "effect": {
+            "blinkDelay": 250,
+            "blinkEnabled": false,
+            "blurRadius": 0,
+            "gravitySensorEnabled": false,
+            "opacity": 100,
+            "outerShadow": {
+              "blur": 0,
+              "color": {
+                "color": "#00000000",
+                "type": "SOLID"
+              },
+              "depth": 0,
+              "direction": 0
+            },
+            "rotation": 0
+          },
+          "general": {
+            "backgroundColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "borderColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "borderRadius": 0,
+            "borderWidth": 0,
+            "height": 24,
+            "locked": false,
+            "visible": true,
+            "width": 700,
+            "x": 40,
+            "y": 207
+          },
+          "id": 2202,
+          "macros": {},
+          "name": "Centered hint",
+          "plugins": [],
+          "text": {
+            "fontColor": {
+              "color": "#FF607B81",
+              "type": "SOLID"
+            },
+            "fontFamily": "Source Han Sans CN",
+            "fontSize": 15,
+            "fontWeight": 500,
+            "horizontalAlignment": "AlignCenter",
+            "paddingBottom": 0,
+            "paddingLeft": 0,
+            "paddingRight": 0,
+            "paddingTop": 0,
+            "text": "TEAM RADIO",
+            "verticalAlignment": "AlignCenter",
+            "wrapText": true
+          },
+          "textEffect": {
+            "shadowBlur": 0,
+            "shadowColor": {
+              "color": "#00000000",
+              "type": "SOLID"
+            },
+            "shadowDepth": 0,
+            "shadowDirection": 0
+          },
+          "type": "Text.qml"
+        }
+      ],
+      "effect": {
+        "blinkDelay": 250,
+        "blinkEnabled": false,
+        "blurRadius": 0,
+        "gravitySensorEnabled": false,
+        "opacity": 100,
+        "rotation": 0
+      },
+      "general": {
+        "backgroundColor": {
+          "color": "#FF000000",
+          "type": "SOLID"
+        },
+        "borderColor": {
+          "color": "#00000000",
+          "type": "SOLID"
+        },
+        "borderRadius": 0,
+        "borderWidth": 0,
+        "height": 248,
+        "locked": false,
+        "visible": true,
+        "width": 780,
+        "x": 0,
+        "y": 0
+      },
+      "guides": [],
+      "id": 1,
+      "image": {
+        "src": ""
+      },
+      "macros": {},
+      "name": "DeltaTR KS Pro Wave Radio",
+      "plugins": [],
+      "type": "Screen.qml"
+    }
+  ],
+  "effect": {
+    "gravitySensorEnabled": false,
+    "rotation": 0
+  },
+  "general": {
+    "backgroundColor": {
+      "color": "#FF000000",
+      "type": "SOLID"
+    },
+    "borderColor": {
+      "color": "#00000000",
+      "type": "SOLID"
+    },
+    "borderRadius": 0,
+    "borderWidth": 0,
+    "height": 248,
+    "locked": false,
+    "visible": true,
+    "width": 780,
+    "x": 0,
+    "y": 0
+  },
+  "id": 0,
+  "imageResources": [
+    "MD5/9ed35eba074ad3e7738fa3c48c49be1b.gif",
+    "MD5/a04f815f0b8d76198078b934da832d38.gif",
+    "MD5/5a391a0ef9790112f86cd852e870cbcd.gif"
+  ],
+  "lastModified": 1794292552,
+  "macros": {},
+  "name": "DeltaTR KS Pro Wave Radio",
+  "plugins": [],
+  "type": "Window.qml",
+  "version": "1.1.1",
+  "window": {
+    "GUID": "deltatr-ks-pro-radio-20261110-v3",
+    "defaultScreenId": 0,
+    "idealDeviceInfos": [
+      {
+        "deviceId": 8,
+        "hardwareVersion": "RS21-W18-HW RGB-DU-V11",
+        "networkId": 1,
+        "productType": "W18 Display"
+      }
+    ]
+  }
+}

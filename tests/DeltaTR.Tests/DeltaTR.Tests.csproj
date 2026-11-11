@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/DeltaTR.Hardware.Moza/DeltaTR.Hardware.Moza.csproj" />
+    <ProjectReference Include="../../src/DeltaTR.Telemetry.Simulators/DeltaTR.Telemetry.Simulators.csproj" />
+    <ProjectReference Include="../../src/DeltaTR.Telemetry.ACC/DeltaTR.Telemetry.ACC.csproj" />
+    <ProjectReference Include="../../src/DeltaTR.Storage/DeltaTR.Storage.csproj" />
+    <ProjectReference Include="../../src/DeltaTR.Engineer/DeltaTR.Engineer.csproj" />
+    <ProjectReference Include="../../src/DeltaTR.Voice/DeltaTR.Voice.csproj" />
+  </ItemGroup>
+</Project>

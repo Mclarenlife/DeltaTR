@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../DeltaTR.Telemetry.Abstractions/DeltaTR.Telemetry.Abstractions.csproj"/>
+    <PackageReference Include="YamlDotNet" Version="16.3.0" />
+    <InternalsVisibleTo Include="DeltaTR.Tests"/>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,58 @@
+<UserControl x:Class="DeltaTR.App.Views.StrategyView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <DataTemplate x:Key="Choice"><TextBlock Text="{Binding Name}" Foreground="{DynamicResource InputText}"/></DataTemplate>
+        <DataTemplate x:Key="AnalysisCard">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14"><StackPanel>
+                <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding Title}" Style="{StaticResource SectionTitle}" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" Content="开始分析" Command="{Binding RunCommand}" Style="{StaticResource Action}" Padding="14,7"/>
+                </Grid>
+                <TextBlock Text="{Binding Description}" Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,8,0,12"/>
+                <TextBlock Text="{Binding Evidence}" Foreground="{StaticResource Accent}" TextWrapping="Wrap" LineHeight="23"/>
+                <Border Background="#101923" CornerRadius="6" Padding="14" Margin="0,12,0,0">
+                    <StackPanel>
+                        <TextBlock Text="{Binding Result}" TextWrapping="Wrap" LineHeight="25"/>
+                        <TextBlock Text="{Binding UpdatedText}" Style="{StaticResource Hint}" FontSize="11" Margin="0,8,0,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel></Border>
+        </DataTemplate>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="0.9*"/><ColumnDefinition Width="1.35*"/></Grid.ColumnDefinitions>
+        <Border Style="{StaticResource Card}" Margin="0,0,18,0"><Grid>
+            <Grid.RowDefinitions><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="0,0,10,0">
+                <TextBlock Text="{Binding GameName, StringFormat={}{0} 的工程师偏好}" Style="{StaticResource SectionTitle}"/>
+                <TextBlock Text="回复长度" Margin="0,20,0,7"/>
+                <ComboBox x:Name="LengthSelector" ItemsSource="{Binding StrategyLengths}" SelectedItem="{Binding StrategyLength}" ItemTemplate="{StaticResource Choice}" Padding="8" AutomationProperties.Name="回复长度"/>
+                <TextBlock Text="策略倾向" Margin="0,16,0,7"/>
+                <ComboBox x:Name="ApproachSelector" ItemsSource="{Binding StrategyApproaches}" SelectedItem="{Binding StrategyBias}" ItemTemplate="{StaticResource Choice}" Padding="8" AutomationProperties.Name="策略倾向"/>
+                <TextBlock Text="自定义对话偏好" Margin="0,16,0,7"/>
+                <TextBox x:Name="InstructionsEditor" Text="{Binding StrategyInstructions, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True"
+                    TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="138" MaxLength="2000" AutomationProperties.Name="自定义对话偏好"/>
+                <TextBlock Text="例如：叫我车手，先说建议，再用一句话解释原因。给出进站建议时留出一圈燃油余量。" Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,7,0,0"/>
+                <TextBlock Text="展示功能" FontSize="17" FontWeight="SemiBold" Margin="0,22,0,10"/>
+                <CheckBox x:Name="PitChoice" Content="进站分析" IsChecked="{Binding ShowPitAnalysis}" Style="{StaticResource PreferenceCheck}"/>
+                <CheckBox x:Name="TyreChoice" Content="换胎分析" IsChecked="{Binding ShowTyreAnalysis}" Style="{StaticResource PreferenceCheck}"/>
+                <CheckBox x:Name="PaceChoice" Content="圈速保持分析" IsChecked="{Binding ShowPaceAnalysis}" Style="{StaticResource PreferenceCheck}"/>
+                <TextBlock Text="使用设置中的 AI 地址、模型和唤醒词。分析结果会显示在这里，并通过无线电回复。" Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,15,0,0"/>
+            </StackPanel></ScrollViewer>
+            <StackPanel Grid.Row="1" Margin="0,16,0,0">
+                <WrapPanel><Button x:Name="SaveButton" Content="保存偏好" Command="{Binding SaveStrategyCommand}" Style="{StaticResource PrimaryAction}"/>
+                    <Button Content="恢复默认" Command="{Binding ResetStrategyCommand}" Style="{StaticResource Action}"/></WrapPanel>
+                <TextBlock Text="{Binding StrategyStatus}" TextWrapping="Wrap" Style="{StaticResource Hint}" Margin="0,12,0,0"/>
+            </StackPanel>
+        </Grid></Border>
+        <Grid Grid.Column="1"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
+            <TextBlock Text="{Binding StrategyDataStatus}" TextWrapping="Wrap" Style="{StaticResource Hint}" Margin="0,0,0,12"/>
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"><StackPanel>
+                <ContentControl x:Name="PitCard" Content="{Binding PitAnalysis}" ContentTemplate="{StaticResource AnalysisCard}" Visibility="{Binding ShowPitAnalysis, Converter={StaticResource BoolVisibility}}"/>
+                <ContentControl x:Name="TyreCard" Content="{Binding TyreAnalysis}" ContentTemplate="{StaticResource AnalysisCard}" Visibility="{Binding ShowTyreAnalysis, Converter={StaticResource BoolVisibility}}"/>
+                <ContentControl x:Name="PaceCard" Content="{Binding PaceAnalysis}" ContentTemplate="{StaticResource AnalysisCard}" Visibility="{Binding ShowPaceAnalysis, Converter={StaticResource BoolVisibility}}"/>
+                <TextBlock Text="选择要展示的分析功能。" FontSize="18" Foreground="#A4B1C3" Margin="20,40" Visibility="{Binding NoStrategyCards, Converter={StaticResource BoolVisibility}}"/>
+            </StackPanel></ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>
