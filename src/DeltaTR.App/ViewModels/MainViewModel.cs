@@ -36,13 +36,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
     private bool compactTables, showTechnicalDetails;
 
     public IReadOnlyList<NavigationItem> Navigation { get; } = [
-        new("radio", "无线电", "按住讲话，车队工程师随时回应。", "\uE720"),
-        new("overview", "车辆与赛况", "关注车辆状态，掌握当前赛况。", "\uE9D9"),
+        new("radio", "无线电", "按住讲话键提问，松开后发送", "\uE720"),
+        new("overview", "车辆与赛况", "当前会话的计时、燃油与轮胎读数", "\uE9D9"),
         new("vocabulary", "自定义词库", "为遥测项目设置习惯的问法。", "\uE8F1"),
         new("strategy", "策略组", "定制 AI 对话偏好，分析进站、换胎与配速。", "\uE9CE"),
-        new("automation", "自动化", "按比赛事件或时间间隔，让工程师依次播报。", "\uE713"),
+        new("automation", "自动化", "按比赛事件或时间间隔，让工程师依次播报。", "\uE768"),
         new("overlay", "屏显", "在驾驶画面上查看无线电对话。", "\uE7F4"),
-        new("settings", "设置", "连接、语音和数据校准。", "\uE713")
+        new("settings", "设置", "管理遥测连接、语音设备和工程师设置", "\uE713")
     ];
 
     public MainViewModel(string? settingsFile = null, System.Net.Http.HttpClient? chatClient = null)
@@ -80,6 +80,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
         refresh.Tick += (_, _) => Refresh();
         refresh.Start();
         InitializeSettings();
+        InitializeSpeechOutput();
         InitializeVocabulary();
         InitializeVoice();
         InitializeOverlay();

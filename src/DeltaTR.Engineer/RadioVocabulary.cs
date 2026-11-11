@@ -30,13 +30,14 @@ public static class RadioVocabulary
     {
         if (game == RacingGame.ACC) return Fields;
         string[] common = ["speed","fuel","gear","rpm","position","completedLaps","lastLapTime","airTemperature",
-            "roadTemperature","sessionTimeLeft","inPitLane","Physics.waterTemp"];
+            "roadTemperature","sessionTimeLeft","inPitLane","Physics.waterTemp","gapAhead"];
         var selected = Fields.Where(f => common.Contains(f.Key)).Select(f => f.Key == "gear" ? f with { Title = "挡位" } : f).ToList();
         if (game == RacingGame.LMU)
-            selected.AddRange(Fields.Where(f => f.Key is "pressure" or "temperature" or "gapAhead" ||
+            selected.AddRange(Fields.Where(f => f.Key is "pressure" or "temperature" ||
                 f.Key.StartsWith("pressure.") || f.Key.StartsWith("temperature.") || f.Key.StartsWith("Physics.brakeTemp")));
         else
         {
+            selected.Add(new("pitTemp", "四轮上次测量中部胎体温度", "轮胎报告"));
             string[] names = ["左前","右前","左后","右后"];
             for (var i = 0; i < names.Length; i++)
             {

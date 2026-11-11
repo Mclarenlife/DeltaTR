@@ -5,7 +5,11 @@ using NAudio.Wave;
 
 namespace DeltaTR.Voice;
 
-public sealed record VoiceResult(string? Text, string Message, float? Confidence = null, string? Candidate = null);
+public sealed record VoiceResult(string? Text, string Message, float? Confidence = null, string? Candidate = null)
+{
+    public string? Transcript { get; init; }
+    public string DisplayMessage => Text is null ? Message : $"已识别“{Text}”";
+}
 
 /// <summary>Chinese offline SAPI speech. No microphone is opened by this class.</summary>
 public sealed class WindowsSpeech : IDisposable
@@ -16,7 +20,7 @@ public sealed class WindowsSpeech : IDisposable
     private bool disposed;
     public int OutputDeviceNumber { get; set; } = -1;
     public bool CanRecognize => recognizer is not null;
-    public bool CanSpeak => speakerName is not null;
+    public bool CanSpeak => speakerName is not null || CloudVoice is not null;
     public string RecognitionDescription { get; private set; } = "未检测到中文离线识别引擎，请在 Windows 语言选项中安装中文语音识别。";
     public string OutputDescription { get; private set; } = "未检测到中文系统声音，请安装中文语音包。";
     public event Action<string>? PlaybackStatus;
@@ -115,59 +119,91 @@ public sealed class WindowsSpeech : IDisposable
         return VoiceCommandPolicy.Select(results, wakeWord, confidence, vocabulary);
     }
 
-    public void Speak(string text, int volume = 80)
+    public TencentVoiceOptions? CloudVoice { get; set; }
+    public int Rate { get; set; }
+
+    public void Speak(string text, int volume = 80) => StartPlayback(text, volume, CloudVoice, Rate, preview: false);
+
+    public void Preview(string text, int volume, TencentVoiceOptions? options, int rate = 0) => StartPlayback(text, volume, options, rate, preview: true);
+
+    private void StartPlayback(string text, int volume, TencentVoiceOptions? cloud, int rate, bool preview)
     {
-        if (disposed) return;
-        if (speakerName is null) { PlaybackStatus?.Invoke(OutputDescription); return; }
+        if (disposed || string.IsNullOrWhiteSpace(text)) return;
         StopSpeaking();
-        _ = SpeakToDeviceAsync(ForSpeech(text), speakerName, volume, OutputDeviceNumber);
+        if (cloud is null && speakerName is null) { PlaybackStatus?.Invoke(OutputDescription); return; }
+        _ = PlayAsync(ForSpeech(text), volume, OutputDeviceNumber, cloud, Math.Clamp(rate, -2, 2), preview);
     }
 
-    private async Task SpeakToDeviceAsync(string text, string name, int volume, int device)
+    private async Task PlayAsync(string text, int volume, int device, TencentVoiceOptions? cloud, int rate, bool preview)
     {
         using var cancellation = new CancellationTokenSource();
         activePlayback = cancellation;
+        var token = cancellation.Token;
+        bool started = false, fallback = false;
         try
         {
-            PlaybackStatus?.Invoke("工程师正在播报…");
-            using var wave = new MemoryStream();
-            using (var synth = new SpeechSynthesizer())
+            PlaybackStatus?.Invoke(cloud is null ? "工程师正在播报…" : "正在连接腾讯云语音…");
+            if (cloud is not null)
             {
-                var generated = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                synth.SelectVoice(name);
-                synth.Volume = Math.Clamp(volume, 0, 100);
-                synth.SetOutputToWaveStream(wave);
-                synth.SpeakCompleted += (_, args) =>
+                try
                 {
-                    if (args.Error is not null) generated.TrySetException(args.Error);
-                    else generated.TrySetResult();
-                };
-                synth.SpeakAsync(text);
-                using var stopSynth = cancellation.Token.Register(synth.SpeakAsyncCancelAll);
-                await generated.Task;
-                cancellation.Token.ThrowIfCancellationRequested();
-                synth.SetOutputToNull();
+                    await TencentSpeech.PlayAsync(cloud, text, device, volume, rate, () => started = true, token);
+                }
+                catch (Exception) when (!token.IsCancellationRequested && !started && !preview && speakerName is not null)
+                {
+                    fallback = true;
+                    PlaybackStatus?.Invoke("腾讯云暂不可用，正在使用系统声音。");
+                }
             }
-            wave.Position = 0;
-            using var reader = new WaveFileReader(wave);
-            using var output = new WaveOutEvent { DeviceNumber = device };
-            var ended = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            output.PlaybackStopped += (_, args) =>
+            if (cloud is null || fallback)
             {
-                if (args.Exception is not null) ended.TrySetException(args.Exception);
-                else ended.TrySetResult();
-            };
-            output.Init(reader);
-            output.Play();
-            using var stopPlayer = cancellation.Token.Register(output.Stop);
-            await ended.Task;
-            if (!cancellation.IsCancellationRequested) PlaybackStatus?.Invoke("播报完成");
+                token.ThrowIfCancellationRequested();
+                await PlayLocalAsync(text, speakerName!, volume, device, rate, token);
+            }
+            if (!token.IsCancellationRequested) PlaybackStatus?.Invoke(fallback ? "已用系统声音完成播报，请测试腾讯云配置。" : "播报完成");
         }
         catch (Exception e)
         {
-            if (!cancellation.IsCancellationRequested) PlaybackStatus?.Invoke("播报失败，请检查输出设备：" + e.Message);
+            if (!token.IsCancellationRequested) PlaybackStatus?.Invoke("播报失败：" +
+                (cloud is null || e is IOException or TimeoutException or ArgumentException ? e.Message : "请检查腾讯云配置、网络和输出设备。"));
         }
         finally { if (activePlayback == cancellation) activePlayback = null; }
+    }
+
+    private static async Task PlayLocalAsync(string text, string name, int volume, int device, int rate, CancellationToken token)
+    {
+        using var wave = new MemoryStream();
+        using (var synth = new SpeechSynthesizer())
+        {
+            var generated = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            synth.SelectVoice(name);
+            synth.Rate = rate * 2;
+            synth.Volume = Math.Clamp(volume, 0, 100);
+            synth.SetOutputToWaveStream(wave);
+            synth.SpeakCompleted += (_, args) =>
+            {
+                if (args.Error is not null) generated.TrySetException(args.Error);
+                else generated.TrySetResult();
+            };
+            synth.SpeakAsync(text);
+            using var stopSynth = token.Register(synth.SpeakAsyncCancelAll);
+            await generated.Task;
+            token.ThrowIfCancellationRequested();
+            synth.SetOutputToNull();
+        }
+        wave.Position = 0;
+        using var reader = new WaveFileReader(wave);
+        using var output = new WaveOutEvent { DeviceNumber = device };
+        var ended = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        output.PlaybackStopped += (_, args) =>
+        {
+            if (args.Exception is not null) ended.TrySetException(args.Exception);
+            else ended.TrySetResult();
+        };
+        output.Init(reader);
+        output.Play();
+        using var stopPlayer = token.Register(output.Stop);
+        await ended.Task;
     }
 
     public static string ForSpeech(string text) => text.Replace("【演示数据】", "演示数据，")
@@ -188,7 +224,12 @@ public static class VoiceCommandPolicy
         if (results.Count == 0) return new(null, "已收到音频，识别器未返回文字，请检查麦克风或延长按键时间。");
         var text = string.Join(" ", results.Select(r => r.Text)).Trim();
         var ai = AiRadio.AfterWakeWord(text, wakeWord) is not null;
-        if (results.Count > 1 && !ai) return new(null, "识别到多段语句，一次请问一个问题。");
+        if (results.Count > 1 && !ai)
+        {
+            var joined = TelemetrySpeechMatcher.Compact(text);
+            if (TelemetrySpeechMatcher.RemoveEcho(joined) == joined)
+                return new(null, "识别到多段语句，一次请问一个问题。");
+        }
         var confidence = results.Min(r => r.Confidence);
         var local = ai ? null : TelemetrySpeechMatcher.Match(text, wakeWord, vocabulary ?? TelemetryQueries.SpokenPhrases);
         if (!float.IsFinite(confidence) || confidence < threshold)

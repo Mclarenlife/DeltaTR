@@ -18,6 +18,7 @@ public sealed partial class MainViewModel
     private readonly List<RadioMessage> conversation = [];
     private string? conversationSession;
     private string? liveQuestion;
+    private (string Wheel, string? Session, Core.RacingGame? Game, DateTimeOffset Until)? clarification;
     private string? liveQuestionSession;
     // Tentative display text only. It never enters the query/AI path before final recognition.
     private string wheelInputText = "";
@@ -63,9 +64,10 @@ public sealed partial class MainViewModel
     public string RecognitionDescription => UseSenseVoice
         ? senseVoice.Installed ? "SenseVoice · 本机中文整句识别 · 支持词库匹配和唤醒词 · 首次加载稍慢" : "缺少 SenseVoice 模型，请使用完整发布目录。"
         : UseZipformer
-        ? zipformer.Installed ? "Zipformer · 本机中英双语识别 · 词库和唤醒词已启用" : "缺少 Zipformer 模型，请使用完整的发布目录。"
+        ? zipformer.Installed ? "Zipformer · 本机中英双语识别" + (senseVoice.Installed ? " · 未匹配时由 SenseVoice 复核遥测问句" : "") : "缺少 Zipformer 模型，请使用完整的发布目录。"
         : speech.RecognitionDescription;
-    public string OutputDescription => speech.OutputDescription;
+    public string OutputDescription => speech.CloudVoice is { } cloud
+        ? "腾讯云 · " + TencentVoices.First(v => v.Id == cloud.Voice).Name : speech.OutputDescription;
 
     private string radioAnswerLabel = "比赛工程师";
     public string RadioAnswerLabel
@@ -74,25 +76,26 @@ public sealed partial class MainViewModel
         private set { if (radioAnswerLabel != value) { radioAnswerLabel = value; Changed(); } }
     }
 
-    private void RefreshLocalAnswer(Core.RaceSnapshot? snapshot, DateTimeOffset now)
+    private EngineerReply? RefreshLocalAnswer(Core.RaceSnapshot? snapshot, DateTimeOffset now)
     {
         if (liveQuestion is null)
         {
             RadioAnswerLabel = "比赛工程师";
-            return;
+            return null;
         }
         if (snapshot?.SessionId != liveQuestionSession)
         {
             liveQuestion = null;
             RadioAnswerLabel = "比赛工程师";
             Answer = "驾驶会话已变化，请重新提问。";
-            return;
+            return null;
         }
         var reply = queries.Answer(liveQuestion, snapshot, now);
         RadioAnswerLabel = reply.HasVerifiedData && snapshot is not null && reply.EvidenceFields.Length > 0
             ? $"遥测更新于 {reply.EvidenceFields.Min(key => snapshot.Reading(key)!.ObservedAt).ToLocalTime():HH:mm:ss}"
             : "比赛工程师";
         if (Answer != reply.Text) Answer = reply.Text;
+        return reply;
     }
 
     private void InitializeVoice()
@@ -108,8 +111,16 @@ public sealed partial class MainViewModel
             LastInput = "麦克风测试失败：" + error.Message;
         });
         SilenceCommand = GameCommand(() => { raceAlerts.ClearPending(); automation.ClearPending(); speech.StopSpeaking(); VoiceStatus = "播报已停止"; return Task.CompletedTask; }, e => VoiceStatus = e.Message);
-        TestSpeakerCommand = GameCommand(() => { if (!IsListening && !processing) speech.Speak("无线电检查，收到。", Volume); return Task.CompletedTask; }, e => VoiceStatus = e.Message);
-        speech.PlaybackStatus += text => dispatcher.BeginInvoke(() => { if (!closing && !IsListening && !processing) VoiceStatus = text; });
+        TestSpeakerCommand = GameCommand(() =>
+        {
+            if (!IsListening && !processing)
+                speech.Preview("无线电检查。前方黄旗，减速。你目前第四，和前车相差零点三秒。", Volume, DraftSpeechOutput(), SpeechRate);
+            return Task.CompletedTask;
+        }, e => OutputStatus(e.Message));
+        speech.PlaybackStatus += text => dispatcher.BeginInvoke(() =>
+        {
+            if (!closing && !IsListening && !processing) { VoiceStatus = text; OutputStatus(text); }
+        });
         if (!CanRecognize) VoiceStatus = RecognitionDescription;
         voiceTimer.Tick += async (_, _) => { if (IsListening && DateTimeOffset.UtcNow - captureStarted > TimeSpan.FromSeconds(15)) await EndTalkAsync(); };
         voiceTimer.Start();
@@ -142,6 +153,7 @@ public sealed partial class MainViewModel
             }
             capture.Start(); captureStarted = DateTimeOffset.UtcNow;
             VoiceStatus = "正在聆听 · 最长 15 秒";
+            UpdateWheelScreen();
         }
         catch (Exception e) { zipformerTurn?.Dispose(); zipformerTurn = null; microphone?.Dispose(); microphone = null; VoiceStatus = "无法开始语音输入：" + e.Message; wheelInputError = VoiceStatus; hideAfter = DateTimeOffset.UtcNow + ReadingTime; }
         VoiceChanged();
@@ -153,12 +165,13 @@ public sealed partial class MainViewModel
         if (capture is null) return;
         var engine = activeSettings.EffectiveEngine;
         var wakeWord = activeSettings.WakeWord;
-        var vocabulary = queries.RecognitionPhrases.ToArray();
+        var vocabulary = queries.RecognitionPhrases;
         using var zipTurn = zipformerTurn;
         zipformerTurn = null;
         // For offline/Windows engines the streaming turn provides a UI draft only.
         if (engine != SpeechEngine.Zipformer) zipTurn?.Dispose();
         microphone = null; processing = true; AudioLevel = 0; VoiceStatus = "正在识别…"; VoiceChanged();
+        UpdateWheelScreen();
         var turn = ++generation;
         using var cancellation = new CancellationTokenSource(); recognitionStop = cancellation;
         try
@@ -177,13 +190,26 @@ public sealed partial class MainViewModel
                     wheelInputError = VoiceStatus;
                     return;
                 }
+                if (!capture.HasSustainedInput(InputThreshold))
+                {
+                    VoiceStatus = "只检测到短促声音，请按住后讲话。";
+                    LastInput += " · " + VoiceStatus;
+                    wheelInputError = VoiceStatus;
+                    return;
+                }
             }
             var result = engine == SpeechEngine.SenseVoice
                 ? await senseVoice.RecognizeAsync(wave, wakeWord, vocabulary, cancellation.Token)
                 : engine == SpeechEngine.Zipformer && zipTurn is not null ? await zipTurn.FinishAsync(cancellation.Token)
                 : await speech.RecognizeAsync(wave, cancellation.Token, wakeWord, Confidence / 100f, vocabulary);
             if (closing || turn != generation) return;
-            LastInput += " · " + result.Message;
+            if (engine == SpeechEngine.Zipformer && result.Text is null && senseVoice.Installed)
+            {
+                VoiceStatus = "正在复核遥测问句…";
+                result = await senseVoice.RecheckTelemetryAsync(result, wave, wakeWord, vocabulary, cancellation.Token);
+                if (closing || turn != generation) return;
+            }
+            LastInput += " · " + result.DisplayMessage;
             if (result.Text is not null && result.Confidence is { } confidence) LastInput += $"（置信度 {confidence:P0}）";
             if (result.Text is null) { VoiceStatus = result.Message; wheelInputError = result.Message; }
             else
@@ -212,6 +238,7 @@ public sealed partial class MainViewModel
 
     public void CancelVoice()
     {
+        clarification = null;
         StopMicrophoneTest();
         SetBubbleTurn(BubbleTurn.Idle);
         generation++; recognitionStop?.Cancel();
@@ -271,12 +298,19 @@ public sealed partial class MainViewModel
         liveQuestion = null;
         RadioAnswerLabel = "比赛工程师";
         var questionForAi = AiRadio.AfterWakeWord(text, activeSettings.WakeWord);
+        var pending = clarification;
+        clarification = null;
         if (questionForAi is null)
         {
+            var now = DateTimeOffset.UtcNow;
             liveQuestion = text;
+            if (pending is { } prompt && prompt.Game == SelectedGame.Id && prompt.Session == snapshot?.SessionId && now <= prompt.Until)
+                liveQuestion = queries.CompleteWheelQuestion(prompt.Wheel, text);
             liveQuestionSession = snapshot?.SessionId;
-            RefreshLocalAnswer(snapshot, DateTimeOffset.UtcNow);
-            VoiceStatus = "遥测回答已更新";
+            var reply = RefreshLocalAnswer(snapshot, now);
+            if (reply?.WheelToClarify is { } wheel)
+                clarification = (wheel, snapshot?.SessionId, SelectedGame.Id, now.AddSeconds(20));
+            VoiceStatus = clarification.HasValue ? "等待确认胎温或胎压" : "遥测回答已更新";
         }
         else if (questionForAi.Length == 0)
         {

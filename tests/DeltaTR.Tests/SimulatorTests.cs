@@ -121,6 +121,7 @@ internal static class SimulatorTests
         v.Write(8192+64, 0x20000); v.Write(8192+96, 4);
         var next=a.ReadMap(v,now.AddMilliseconds(200));
         Require(next.Traffic is { Racing: true } && next.Fields["gapAhead"].Value == 4500);
+        Require(dynamicQueries.Answer("与前车差距", next, next.CapturedAt).Text.Contains("4.50 秒"));
         Require(frame.RaceControl is { Yellow: true, Penalty: 0 } && next.RaceControl is { Yellow: false, Penalty: 2 });
         Require(next.Reading("IR.Var.SpecialHybrid")==null && next.Reading("IR.Var.AnotherSensor")!=null);
         Require(frame.Reading("IR.Var.SpecialHybrid")!.Value==123.25);
@@ -146,7 +147,7 @@ internal static class SimulatorTests
         Require(IRacingReference.Variables.Count == 461 && IRacingReference.SessionPaths.Count == 259);
         var fields = RadioVocabulary.For(RacingGame.IRacing);
         Require(fields.Count == fields.Select(f => f.Key).Distinct().Count());
-        Require(fields.Count == 795);
+        Require(fields.Count == 797);
         foreach (var variable in IRacingReference.Variables)
             Require(fields.Any(f => f.Key == "IR.Var." + variable.Name));
         Require(!fields.Any(f => f.Key.EndsWith("UserID") || f.Key.EndsWith("TelemetryDiskFile")));

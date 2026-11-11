@@ -148,7 +148,7 @@ public sealed class RaceAlertMonitor
         return crossed.Length == 1 ? crossed[0].Id : null;
     }
 
-    public string? TakeReady(bool imperial = false)
+    public string? TakeReady(bool imperial = false, RaceReports? reports = null)
     {
         if (latest?.Phase != SessionPhase.Live) return null;
         var messages = new List<string>();
@@ -161,9 +161,12 @@ public sealed class RaceAlertMonitor
                 RaceReports.Fresh(opponent.ObservedAt, observedNow))
             {
                 string name = string.IsNullOrWhiteSpace(opponent.Name) ? $"车辆 {id}" : opponent.Name;
-                text += $"{name}当前在你{(opponent.Position < item.Rank ? "前" : "后")}方。" +
-                    RaceReports.SpeedDifference(latest, opponent, observedNow, imperial);
+                bool ahead = opponent.Position < item.Rank;
+                text += $"{name}当前在你{(ahead ? "前" : "后")}方。";
+                if (!ahead) text += RaceReports.SpeedDifference(latest, opponent, observedNow, imperial);
             }
+            if (kind == RaceAlertKind.Position && item.Rank > rankBeforeQueue)
+                text += (reports ?? new RaceReports()).Gap(latest, observedNow, false);
             messages.Add(text); Drop(kind);
         }
         return messages.Count == 0 ? null : (session?.Item2 == DataOrigin.Synthetic ? "【演示数据】" : "") + string.Concat(messages);

@@ -51,8 +51,8 @@ public static class AutomationLabels
     public static string Action(RadioAction action) => action switch
     {
         RadioAction.Position => "播报当前排名", RadioAction.GapLeader => "播报与头车秒差",
-        RadioAction.GapAhead => "播报与前车秒差", RadioAction.GapBehind => "播报与后车秒差",
-        RadioAction.AheadSpeed => "播报与前车速度差", RadioAction.BehindSpeed => "播报与后车速度差",
+        RadioAction.GapAhead or RadioAction.AheadSpeed => "播报与前车秒差", RadioAction.GapBehind => "播报与后车秒差",
+        RadioAction.BehindSpeed => "播报与后车速度差",
         RadioAction.Fuel => "播报剩余燃油", RadioAction.TyrePressure => "播报胎压",
         RadioAction.TyreTemperature => "播报胎温", RadioAction.LastLap => "播报上一圈成绩",
         RadioAction.RemainingTime => "播报比赛剩余时间", RadioAction.Flags => "播报旗语",

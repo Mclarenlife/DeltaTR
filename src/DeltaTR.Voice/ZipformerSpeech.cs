@@ -52,7 +52,11 @@ public sealed class ZipformerSpeech
                 {
                     using var result = JsonDocument.Parse(Marshal.PtrToStringUTF8(json)!);
                     string text = (result.RootElement.GetProperty("text").GetString() ?? "").Trim();
-                    if (text != previousPreview && text.Length > 0) { previousPreview = text; preview(text); }
+                    if (text != previousPreview && text.Length > 0)
+                    {
+                        previousPreview = text;
+                        preview(TelemetrySpeechMatcher.DisplayQuestion(text, wakeWord, vocabulary));
+                    }
                 }
                 finally { ZipformerNative.SherpaOnnxDestroyOnlineStreamResultJson(json); }
             }
@@ -83,8 +87,8 @@ public sealed class ZipformerSpeech
     {
         var text = transcript.Trim();
         if (text.Length == 0) return new(null, "Zipformer 未听到清晰语音，请重新讲话。");
-        if (AiRadio.AfterWakeWord(text, wakeWord) is not null) return new(text, $"Zipformer 听到“{text}”");
-        return TelemetrySpeechMatcher.Match(text, wakeWord, vocabulary);
+        if (AiRadio.AfterWakeWord(text, wakeWord) is not null) return new(text, $"Zipformer 听到“{text}”") { Transcript = text };
+        return TelemetrySpeechMatcher.Match(text, wakeWord, vocabulary) with { Transcript = text };
     }
 
     private ZipformerNative.Model LoadModel()

@@ -11,6 +11,17 @@ public sealed partial class MainViewModel
     private readonly string settingsPath;
     private readonly System.Net.Http.HttpClient? chatClient;
     private RadioSettings activeSettings = new();
+    public bool LightTheme => activeSettings.LightTheme;
+    public string ThemeSwitchLabel => LightTheme ? "切换为深色" : "切换为浅色";
+    internal void ToggleTheme()
+    {
+        var next = activeSettings with { LightTheme = !LightTheme };
+        try { next.Save(settingsPath); }
+        catch (Exception e) { Notice = "外观设置保存失败：" + e.Message; return; }
+        activeSettings = next;
+        Changed(nameof(LightTheme));
+        Changed(nameof(ThemeSwitchLabel));
+    }
     public TalkBinding SelectedTalkKey { get; private set; } = TalkBinding.Keyboard(0x77);
     public bool BindingInput { get; private set; }
     internal int BindingRevision { get; private set; }

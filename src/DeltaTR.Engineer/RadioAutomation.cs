@@ -88,13 +88,13 @@ public sealed class RadioAutomation
             {
                 case RadioAction.Position: return rank.HasValue ? $"目前第 {rank:0} 名。" : "当前排名暂不可用。";
                 case RadioAction.GapLeader: return reports.Gap(frame, now, true);
+                case RadioAction.AheadSpeed: // Older saved rules used speed for the car ahead.
                 case RadioAction.GapAhead: return reports.Gap(frame, now, false);
                 case RadioAction.GapBehind: return reports.GapBehind(frame, now);
-                case RadioAction.AheadSpeed:
                 case RadioAction.BehindSpeed:
                     if (!rank.HasValue) return "当前排名暂不可用。";
-                    var target = frame.Traffic?.AtPosition((int)rank + (action == RadioAction.AheadSpeed ? -1 : 1));
-                    return (action == RadioAction.AheadSpeed ? "前车，" : "后车，") + RaceReports.SpeedDifference(frame, target, now, imperial);
+                    var target = frame.Traffic?.AtPosition((int)rank + 1);
+                    return "后车，" + RaceReports.SpeedDifference(frame, target, now, imperial);
                 case RadioAction.Fuel: return Query("fuel");
                 case RadioAction.TyrePressure: return frame.Game == RacingGame.IRacing ? string.Concat(Metrics.Wheels.Select(w => Query("coldPressure." + w))) : Query("pressure");
                 case RadioAction.TyreTemperature: return frame.Game == RacingGame.IRacing ? string.Concat(Metrics.Wheels.Select(w => Query("pitTemp." + w))) : Query("temperature");

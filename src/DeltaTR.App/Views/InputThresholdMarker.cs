@@ -3,7 +3,7 @@ using System.Windows.Media;
 
 namespace DeltaTR.App.Views;
 
-public sealed class InputThresholdMarker : FrameworkElement
+public sealed class InputThresholdMarker : System.Windows.Controls.Control
 {
     public static readonly DependencyProperty ThresholdProperty = DependencyProperty.Register(
         nameof(Threshold), typeof(int), typeof(InputThresholdMarker),
@@ -19,6 +19,6 @@ public sealed class InputThresholdMarker : FrameworkElement
     {
         var width = Math.Min(2, ActualWidth);
         var x = (ActualWidth - width) * Math.Clamp(Threshold, 0, 100) / 100d;
-        drawingContext.DrawRectangle(Brushes.White, null, new Rect(x, 0, width, ActualHeight));
+        drawingContext.DrawRectangle(Foreground, null, new Rect(x, 0, width, ActualHeight));
     }
 }

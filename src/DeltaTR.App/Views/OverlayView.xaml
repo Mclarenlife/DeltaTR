@@ -8,16 +8,16 @@
             <StackPanel Visibility="{Binding UsePitHouseBridge, Converter={StaticResource BoolVisibility}}" Margin="0,0,0,12">
                 <CheckBox Content="智能仪表切换：短按讲话键切换画面，长按讲话" IsChecked="{Binding WheelSmartSwitch}" Margin="0,0,0,10"/>
                 <CheckBox Content="赛事提醒和自动化播报临时弹出，结束后返回原仪表" IsChecked="{Binding WheelAutoPopup}" IsEnabled="{Binding WheelSmartSwitch}" Margin="0,0,0,10"/>
-                <TextBlock Text="共用设置中的讲话键（键盘或方向盘按钮）。首次使用请先在 Pit House 选好比赛仪表；手动打开的 DeltaTR 画面会保持，直到再次短按。" TextWrapping="Wrap" Opacity="0.65" Margin="0,0,0,12"/>
+                <TextBlock Text="共用设置中的讲话键（键盘或方向盘按钮）。首次使用请先在 Pit House 选好比赛仪表；手动打开的 DeltaTR 画面会保持，直到再次短按。" TextWrapping="Wrap" Foreground="{DynamicResource Secondary}" Margin="0,0,0,12"/>
                 <DockPanel><Button DockPanel.Dock="Right" Content="选择 Pit House" Command="{Binding ChoosePitHouseCommand}" Margin="10,0,0,0"/><TextBox Text="{Binding PitHousePath, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Pit House 程序路径"/></DockPanel>
                 <WrapPanel Margin="0,8,0,0"><Button Content="安装 / 升级桥接" Command="{Binding InstallPitHouseBridgeCommand}" Margin="0,0,10,0"/><Button Content="恢复 Pit House 原文件" Command="{Binding RestorePitHouseBridgeCommand}"/></WrapPanel>
-                <TextBlock Text="适用已验证的 Pit House 1.4.2.3。安装前备份并校验，更新后需重新适配。" TextWrapping="Wrap" Opacity="0.65" Margin="0,8,0,0"/>
+                <TextBlock Text="适用已验证的 Pit House 1.4.2.3。安装前备份并校验，更新后需重新适配。" TextWrapping="Wrap" Foreground="{DynamicResource Secondary}" Margin="0,8,0,0"/>
             </StackPanel>
             <Button Content="打开仪表文件夹" Command="{Binding OpenWheelDashboardCommand}" HorizontalAlignment="Left" Margin="0,0,0,8"/>
             <DockPanel><DockPanel.Style><Style TargetType="DockPanel"><Style.Triggers><DataTrigger Binding="{Binding UsePitHouseBridge}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></DockPanel.Style>
                 <Button DockPanel.Dock="Right" Content="刷新设备" Command="{Binding RefreshWheelPortsCommand}" Margin="10,0,0,0"/>
                 <ComboBox ItemsSource="{Binding WheelPorts}" SelectedItem="{Binding SelectedWheelPort}" DisplayMemberPath="Name" MinWidth="180" AutomationProperties.Name="方向盘显示设备"/></DockPanel>
-            <TextBlock Text="{Binding WheelConnectionHelp}" TextWrapping="Wrap" Margin="0,12,0,8" Opacity="0.7"/>
+            <TextBlock Text="{Binding WheelConnectionHelp}" TextWrapping="Wrap" Margin="0,12,0,8" Foreground="{DynamicResource Secondary}"/>
             <TextBlock Text="{Binding WheelStatus}" TextWrapping="Wrap"/>
         </StackPanel></Border>
         <Border Style="{StaticResource Card}"><StackPanel>
@@ -28,8 +28,8 @@
             <Border CornerRadius="8" Padding="12" Height="244">
                 <Border.Background><DrawingBrush TileMode="Tile" Viewport="0,0,24,24" ViewportUnits="Absolute">
                     <DrawingBrush.Drawing><DrawingGroup>
-                        <GeometryDrawing Brush="#263249" Geometry="M0,0 H24 V24 H0 Z"/>
-                        <GeometryDrawing Brush="#2A3850" Geometry="M0,0 H12 V12 H0 Z M12,12 H24 V24 H12 Z"/>
+                        <GeometryDrawing Brush="{DynamicResource Raised}" Geometry="M0,0 H24 V24 H0 Z"/>
+                        <GeometryDrawing Brush="{DynamicResource Hover}" Geometry="M0,0 H12 V12 H0 Z M12,12 H24 V24 H12 Z"/>
                     </DrawingGroup></DrawingBrush.Drawing>
                 </DrawingBrush></Border.Background>
                 <Viewbox Stretch="Uniform" StretchDirection="DownOnly"><views:AssistantSurface x:Name="Preview" Placement="{Binding TextPlacement}"/></Viewbox>

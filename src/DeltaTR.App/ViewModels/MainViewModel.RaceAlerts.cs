@@ -80,7 +80,7 @@ public sealed partial class MainViewModel
         raceAlerts.Observe(frame, now, frame == null ? RaceAlertKind.None : AlertsFor(frame.Game));
         automation.Observe(frame, now, activeSettings.Automations, raceAlerts.Occurrences);
         if (frame?.Phase != SessionPhase.Live || IsListening || processing || aiStop != null || levelMonitor != null || speech.IsSpeaking) return;
-        var message = raceAlerts.TakeReady(ImperialUnits);
+        var message = raceAlerts.TakeReady(ImperialUnits, raceReports);
         if (message == null)
         {
             message = automation.TakeReady(frame, now, raceReports, ImperialUnits);
@@ -93,6 +93,7 @@ public sealed partial class MainViewModel
     {
         LastRaceAlert = message;
         if (bubbleTurn != BubbleTurn.Typing) SetBubbleTurn(BubbleTurn.Alert);
+        UpdateWheelScreen();
         if (SpeakReplies) speech.Speak(message, Volume);
     }
 }

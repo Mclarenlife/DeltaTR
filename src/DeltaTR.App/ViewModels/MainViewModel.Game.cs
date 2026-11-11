@@ -68,7 +68,7 @@ public sealed partial class MainViewModel
                     queries = new TelemetryQueries(new Dictionary<string, string[]>(), "", game);
                     VocabularyStatus = "当前游戏词库加载失败，已使用默认问法：" + e.Message;
                 }
-                SelectedField = VocabularyFields[0];
+                SelectedField = FilteredVocabulary[0].Field;
             }
             Notice = choice.Id is null ? "请在左侧选择游戏" : $"已选择 {GameName}";
             if (choice.Id.HasValue)

@@ -7,6 +7,7 @@ internal static class RadioPhrasebook
     internal static IEnumerable<(string Metric, string Phrase)> Entries()
     {
         (string Metric, string Phrases)[] groups = [
+            ("pitTemp", "胎温 胎温多少 轮胎温度 轮胎温度多少 上次胎温多少 上次测量的胎温 报一下上次胎温"),
             ("rainIntensity", "现在下雨了吗 赛道在下雨吗 当前雨势 雨下得大吗 现在是什么雨量"),
             ("rainIn10Minutes", "十分钟后会下雨吗 十分钟后的天气 十分钟以后雨大吗 报一下十分钟雨情 未来十分钟的雨量"),
             ("rainIn30Minutes", "半小时后会下雨吗 三十分钟后雨大吗 半小时后的天气 报一下半小时雨情 半小时后雨量多少"),
@@ -21,7 +22,7 @@ internal static class RadioPhrasebook
             ("completedLaps", "已经跑了几圈 我完成了多少圈 已完成多少圈 报一下已跑圈数 跑完几圈了"),
             ("lastLapTime", "上一圈跑了多久 上一圈圈速是多少 刚才那圈几分几秒 报一下上一圈用时 我上一圈多快"),
             ("validLap", "这一圈有效吗 当前圈还有效吗 这圈成绩算数吗 我这圈有没有被取消 这圈有效不有效"),
-            ("gapAhead", "我离前车几秒 距离前车多远 前面那台车领先几秒 报一下前车时间差 和前车相差多少秒"),
+            ("gapAhead", "我离前车几秒 距离前车多远 前面那台车领先几秒 报一下前车时间差 和前车相差多少秒 与前车差距 与前车差距多少 与前车秒差"),
             ("gapBehind", "后车离我几秒 我领先后车多少秒 后面那台车差多远 报一下后车时间差 和后车相差多少秒"),
             ("sessionTimeLeft", "比赛还剩多久 这节还有多长时间 还剩几分钟 报一下剩余时间 距离结束还有多久"),
             ("missingMandatoryPits", "还差几次强制进站 强制进站还剩几次 我还要进几次站 还有强制进站吗 报一下剩余强制进站次数"),
@@ -57,6 +58,8 @@ internal static class RadioPhrasebook
         {
             var corner = corners[i];
             var wheel = Metrics.Wheels[i];
+            foreach (var phrase in new[] { $"{corner}胎温", $"{corner}胎温多少", $"{corner}上次胎温多少" })
+                yield return ("pitTemp." + wheel, phrase);
             foreach (var phrase in new[] { $"{corner}胎几度", $"{corner}胎温多少", $"{corner}轮胎温度是多少", $"报一下{corner}胎温", $"{corner}轮现在多少度" })
                 yield return ("temperature." + wheel, phrase);
             foreach (var phrase in new[] { $"{corner}胎压多少", $"{corner}轮压力是多少", $"报一下{corner}胎压", $"{corner}轮胎压怎么样", $"{corner}轮现在的胎压" })

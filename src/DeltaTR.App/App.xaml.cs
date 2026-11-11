@@ -14,6 +14,13 @@ namespace DeltaTR.App;
 
 public partial class App : Application
 {
+    private void ApplyTheme(bool light)
+    {
+        var palettes = Resources.MergedDictionaries;
+        var source = new Uri(light ? "Themes/Light.xaml" : "Themes/Dark.xaml", UriKind.Relative);
+        if (palettes[0].Source != source)
+            palettes[0] = new ResourceDictionary { Source = source };
+    }
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -37,6 +44,11 @@ public partial class App : Application
         var testClient = testApi is null ? null : new System.Net.Http.HttpClient(testApi);
         var testSettings = smokeFolder is null ? null : Path.Combine(smokeFolder, Guid.NewGuid().ToString("N") + ".settings.json");
         var viewModel = new MainViewModel(testSettings, testClient);
+        ApplyTheme(viewModel.LightTheme);
+        viewModel.PropertyChanged += (_, change) =>
+        {
+            if (change.PropertyName == nameof(viewModel.LightTheme)) ApplyTheme(viewModel.LightTheme);
+        };
         window.DataContext = viewModel;
         PushToTalk? ptt = smoke < 0 ? new PushToTalk(viewModel) : null;
         MainWindow = window;

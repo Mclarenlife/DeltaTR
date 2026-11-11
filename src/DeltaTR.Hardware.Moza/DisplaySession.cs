@@ -25,6 +25,10 @@ public sealed class MozaDisplaySession
     readonly Dictionary<byte,uint> ends = new Dictionary<byte,uint>();
     string model = "";
     byte catalogSession, channel;
+    internal const int RowCount = 5;
+    internal static string Field(int row) => row == 0 ? "v1/gameData/DeltaTRRadio" : $"v1/gameData/DeltaTRRadio{row + 1}";
+    readonly byte[] rowChannels = new byte[RowCount];
+    readonly byte[] rowSessions = new byte[RowCount];
     bool acknowledge;
     int pushCount;
     int frameLogCount;
@@ -159,6 +163,8 @@ public sealed class MozaDisplaySession
                 if(url.StartsWith("v1/"))Report("CATALOG session="+session+" idx="+body[0]+" "+url);
                 if(url=="v1/gameData/DeltaTRRadio" && body[0]!=0)
                 { catalogSession=session; channel=body[0]; }
+                for (int row = 0; row < rowChannels.Length; row++)
+                    if (url == Field(row)) { rowChannels[row] = body[0]; rowSessions[row] = session; }
             }
             if(type==6 && body.Length==4)
             { ends[session]=BitConverter.ToUInt32(body,0); Report("END session="+session+" counter="+ends[session]); }
@@ -182,8 +188,8 @@ public sealed class MozaDisplaySession
         }
     }
     public void Run(int seconds) => RunCore(seconds, null, CancellationToken.None);
-    public void RunLive(Func<string> message, CancellationToken token) => RunCore(null, message, token);
-    void RunCore(int? seconds, Func<string>? messageProvider, CancellationToken token)
+    public void RunLive(Func<string[]> message, CancellationToken token) => RunCore(null, message, token);
+    void RunCore(int? seconds, Func<string[]>? messageProvider, CancellationToken token)
     {
         if(seconds.HasValue && (seconds<10 || seconds>120))throw new ArgumentOutOfRangeException("seconds");
         cancellation=token;
@@ -199,6 +205,8 @@ public sealed class MozaDisplaySession
             long until=clock.ElapsedMilliseconds+18000;
             while((channel==0 || !ends.ContainsKey(catalogSession)) && clock.ElapsedMilliseconds<until)Pump(200);
             if(channel==0 || !ends.ContainsKey(catalogSession))throw new IOException("No fresh DeltaTRRadio catalog + END; no guessed channel writes performed.");
+            if (messageProvider != null && (rowChannels.Contains((byte)0) || rowSessions.Any(s => s != catalogSession)))
+                throw new IOException("请安装新版桥接并上传 Fullscreen Radio 仪表，缺少全屏文字字段。");
             byte ff=(byte)(catalogSession==1?2:1);
             // Only benign display handshake records 2/7. No properties, FFB catalogs or switches.
             byte[] nonce=BitConverter.GetBytes(2u).Concat(BitConverter.GetBytes((uint)DateTimeOffset.UtcNow.ToUnixTimeSeconds()))
@@ -213,9 +221,18 @@ public sealed class MozaDisplaySession
             while(clock.ElapsedMilliseconds<stop)
             {
                 cancellation.ThrowIfCancellationRequested();
-                string message=messageProvider!=null ? messageProvider() : messages[pushCount%messages.Length]+" #"+(pushCount+1);
-                Data(catalogSession,StringRecord(channel,message));pushCount++;
-                if(messageProvider==null)Report("PUSH ACKED "+message);
+                if (messageProvider != null)
+                {
+                    var rows = messageProvider();
+                    Data(catalogSession, rows.SelectMany((value, row) => StringRecord(rowChannels[row], value)).ToArray());
+                }
+                else
+                {
+                    string message = messages[pushCount%messages.Length]+" #"+(pushCount+1);
+                    Data(catalogSession,StringRecord(channel,message));
+                    Report("PUSH ACKED "+message);
+                }
+                pushCount++;
                 Pump(messageProvider==null?2000:80);
             }
         }

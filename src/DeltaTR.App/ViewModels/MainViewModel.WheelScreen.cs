@@ -59,8 +59,8 @@ public sealed partial class MainViewModel
     private bool IsAnyWheelScreenRunning => wheelScreen.IsRunning || pitHouseBridge.IsRunning;
     public bool CanChangeWheelMode => !IsAnyWheelScreenRunning;
     public string WheelConnectionHelp => UsePitHouseBridge
-        ? "上传 DeltaTR KS Pro Wave Radio 仪表，安装或升级桥接并重启 Pit House。先在 Pit House 选好比赛仪表，再开启屏显。使用专用文字字段；短按讲话键切换画面，长按 0.5 秒开始讲话，松开发送。"
-        : "先应用 DeltaTR KS Pro Wave Radio 仪表，再退出 Pit House。独立模式会占用基座串口。";
+        ? "上传 DeltaTR KS Pro Fullscreen Radio 仪表，安装或升级桥接并重启 Pit House。先在 Pit House 选好比赛仪表，再开启屏显。使用专用文字字段；短按讲话键切换画面，长按 0.5 秒开始讲话，松开发送。"
+        : "先应用 DeltaTR KS Pro Fullscreen Radio 仪表，再退出 Pit House。独立模式会占用基座串口。";
     private string pitHousePath = "";
     public string PitHousePath { get => pitHousePath; set { pitHousePath = value; Changed(); } }
     public ICommand ChoosePitHouseCommand { get; private set; } = null!;
@@ -69,7 +69,7 @@ public sealed partial class MainViewModel
     private IReadOnlyList<WheelPort> wheelPorts = [];
     public IReadOnlyList<WheelPort> WheelPorts { get => wheelPorts; private set { wheelPorts = value; Changed(); } }
     public WheelPort? SelectedWheelPort { get; set; }
-    private string wheelStatus = "尚未开启 · 请先上传 DeltaTR KS Pro Wave Radio 仪表；智能切换模式下，开启前选好比赛仪表";
+    private string wheelStatus = "尚未开启 · 请先上传 DeltaTR KS Pro Fullscreen Radio 仪表；智能切换模式下，开启前选好比赛仪表";
     public string WheelStatus { get => wheelStatus; private set { if (wheelStatus != value) { wheelStatus = value; Changed(); } } }
     public string WheelButtonText => IsAnyWheelScreenRunning ? "关闭方向盘屏显" : "开启方向盘屏显";
     public ICommand ToggleWheelScreenCommand { get; private set; } = null!;
@@ -115,7 +115,7 @@ public sealed partial class MainViewModel
             if (IsAnyWheelScreenRunning) { await StopWheelScreensAsync(); WheelStatus = "方向盘屏显已关闭"; }
             else if (UsePitHouseBridge)
             {
-                if (!PitHouseBridgeInstaller.IsInstalled) throw new InvalidOperationException("请安装或升级桥接并重启 Pit House，确认 Wave Radio 已上传；智能切换模式下先选好比赛仪表。");
+                if (!PitHouseBridgeInstaller.IsInstalled) throw new InvalidOperationException("请安装或升级桥接并重启 Pit House，确认 Fullscreen Radio 已上传；智能切换模式下先选好比赛仪表。");
                 UpdateWheelScreen();
                 pitHouseBridge.Start(BridgeSettings.LoadOrCreate());
                 WheelStatus = pitHouseBridge.Status;
@@ -161,10 +161,10 @@ public sealed partial class MainViewModel
             "offline" => "未连接游戏",
             "reply" => bubbleTurn == BubbleTurn.Alert ? LastRaceAlert : Answer, _ => ""
         };
-        wheelScreen.Update(new(state, text, generation));
+        var message = new WheelMessage(state, text, unchecked((int)screenTurn));
+        wheelScreen.Update(message);
         bool show = screenPresentation.Show(WheelAutoPopup, WheelActivity, screenTurn);
-        pitHouseBridge.SetScreenMode(WheelSmartSwitch ? show ? "radio" : "return" : "keep", screenTurn);
-        pitHouseBridge.Update(new(state, text, generation));
+        pitHouseBridge.Update(message, WheelSmartSwitch ? show ? "radio" : "return" : "keep", screenTurn);
         if (pitHouseBridge.IsRunning || pitHouseBridge.HasFailed) WheelStatus = pitHouseBridge.Status;
         else if (wheelScreen.IsRunning) WheelStatus = wheelScreen.Status;
         else if (wheelScreen.Status.StartsWith("方向盘连接失败", StringComparison.Ordinal)) WheelStatus = wheelScreen.Status;

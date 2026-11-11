@@ -4,6 +4,8 @@ using DeltaTR.Core;
 
 namespace DeltaTR.App.ViewModels;
 
+public sealed record VocabularyEntry(RadioField Field, bool IsPinned);
+
 public sealed partial class MainViewModel
 {
     private RadioField selectedField = RadioVocabulary.Fields[0];
@@ -35,12 +37,35 @@ public sealed partial class MainViewModel
         {
             vocabularyFilter = value.Trim();
             Changed(nameof(FilteredVocabulary));
-            if (!FilteredVocabulary.Contains(selectedField) && FilteredVocabulary.FirstOrDefault() is { } first) SelectedField = first;
+            var entries = FilteredVocabulary;
+            if (!entries.Any(e => e.Field == selectedField) && entries.FirstOrDefault() is { } first) SelectedField = first.Field;
         }
     }
-    public IReadOnlyList<RadioField> FilteredVocabulary => VocabularyFields.Where(f =>
-        f.Title.Contains(vocabularyFilter, StringComparison.OrdinalIgnoreCase) || f.Group.Contains(vocabularyFilter, StringComparison.OrdinalIgnoreCase)
-        || f.Key.Contains(vocabularyFilter, StringComparison.OrdinalIgnoreCase)).ToArray();
+    public IReadOnlyList<VocabularyEntry> FilteredVocabulary
+    {
+        get
+        {
+            var pinned = activeSettings.PinnedVocabulary.GetValueOrDefault(GameName);
+            return VocabularyFields.Where(f => f.Title.Contains(vocabularyFilter, StringComparison.OrdinalIgnoreCase) ||
+                    f.Group.Contains(vocabularyFilter, StringComparison.OrdinalIgnoreCase) || f.Key.Contains(vocabularyFilter, StringComparison.OrdinalIgnoreCase))
+                .Select(f => new VocabularyEntry(f, pinned?.Contains(f.Key) == true)).OrderByDescending(row => row.IsPinned).ToArray();
+        }
+    }
+
+    internal void SetVocabularyPinned(IEnumerable<VocabularyEntry> entries, bool pin)
+    {
+        if (!HasGame) return;
+        var keys = new HashSet<string>(activeSettings.PinnedVocabulary.GetValueOrDefault(GameName) ?? []);
+        bool changed = false;
+        foreach (var entry in entries) changed |= pin ? keys.Add(entry.Field.Key) : keys.Remove(entry.Field.Key);
+        if (!changed) return;
+        var next = activeSettings with { PinnedVocabulary = new(activeSettings.PinnedVocabulary) { [GameName] = keys } };
+        try { next.Save(settingsPath); }
+        catch (Exception e) { VocabularyStatus = "置顶设置保存失败：" + e.Message; return; }
+        activeSettings = next;
+        Changed(nameof(FilteredVocabulary));
+        Changed(nameof(SelectedField));
+    }
     public RadioField SelectedField
     {
         get => selectedField;

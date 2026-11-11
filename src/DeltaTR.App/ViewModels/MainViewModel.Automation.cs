@@ -22,7 +22,7 @@ public sealed partial class MainViewModel
     public IReadOnlyList<TriggerChoice> AutomationTriggers { get; } =
         Enum.GetValues<RadioTrigger>().Select(t => new TriggerChoice(t, AutomationLabels.Trigger(t))).ToArray();
     public IReadOnlyList<ActionChoice> AutomationActions { get; } =
-        Enum.GetValues<RadioAction>().Select(a => new ActionChoice(a, AutomationLabels.Action(a))).ToArray();
+        Enum.GetValues<RadioAction>().Where(a => a != RadioAction.AheadSpeed).Select(a => new ActionChoice(a, AutomationLabels.Action(a))).ToArray();
     public ObservableCollection<AutomationChoice> Automations { get; } = [];
     public ObservableCollection<ActionChoice> ActionSequence { get; } = [];
     private AutomationChoice? selectedAutomation;
@@ -118,7 +118,7 @@ public sealed partial class MainViewModel
         AutomationTrigger = AutomationTriggers.FirstOrDefault(t => t.Id == rule.Trigger) ?? AutomationTriggers[0];
         ActionSequence.Clear();
         foreach (var action in rule.Actions ?? [])
-            if (AutomationActions.FirstOrDefault(a => a.Id == action) is { } choice) ActionSequence.Add(choice);
+            if (AutomationActions.FirstOrDefault(a => a.Id == (action == RadioAction.AheadSpeed ? RadioAction.GapAhead : action)) is { } choice) ActionSequence.Add(choice);
         SelectedAction = ActionSequence.FirstOrDefault(); Changed(nameof(SelectedAction));
     }
 

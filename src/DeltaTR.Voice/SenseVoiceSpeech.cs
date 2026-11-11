@@ -21,6 +21,15 @@ public sealed partial class SenseVoiceSpeech
         return Select(transcript, wakeWord, vocabulary);
     }
 
+    public async Task<VoiceResult> RecheckTelemetryAsync(VoiceResult first, byte[] wave, string wakeWord,
+        IReadOnlyList<string> vocabulary, CancellationToken token)
+    {
+        if (first.Text is not null || !Installed) return first;
+        var second = await RecognizeAsync(wave, wakeWord, vocabulary, token).ConfigureAwait(false);
+        if (second.Text is null || AiRadio.AfterWakeWord(second.Text, wakeWord) is not null) return first;
+        return second with { Message = $"Zipformer：{first.Transcript ?? "未返回文字"} · 本机复核：{second.Message}" };
+    }
+
     public Task<string> TranscribeAsync(byte[] wave, CancellationToken token) => Task.Run(async () =>
     {
         token.ThrowIfCancellationRequested();
@@ -42,14 +51,31 @@ public sealed partial class SenseVoiceSpeech
             try
             {
                 using var result = JsonDocument.Parse(Marshal.PtrToStringUTF8(json)!);
-                return CleanTranscript(result.RootElement.GetProperty("text").GetString() ?? "");
+                return ReadTranscript(result.RootElement);
             }
             finally { SenseVoiceNative.SherpaOnnxDestroyOfflineStreamResultJson(json); }
         }
         finally { access.Release(); }
     }, token);
 
-    public static string CleanTranscript(string text) => Tags().Replace(text, "").Trim();
+    internal static string ReadTranscript(JsonElement result)
+    {
+        // sherpa may expose SenseVoice labels separately instead of embedding them in text.
+        if (result.TryGetProperty("lang", out var lang) && lang.GetString() == "<|nospeech|>" ||
+            result.TryGetProperty("event", out var sound) && NonSpeechEvent(sound.GetString())) return "";
+        return CleanTranscript(result.GetProperty("text").GetString() ?? "");
+    }
+
+    private static bool NonSpeechEvent(string? label) => label is "<|BGM|>" or "<|Applause|>" or
+        "<|Laughter|>" or "<|Cry|>" or "<|Sneeze|>" or "<|Breath|>" or "<|Cough|>";
+
+    public static string CleanTranscript(string text)
+    {
+        if (!text.Contains("<|", StringComparison.Ordinal)) return text.Trim();
+        if (text.Contains("<|nospeech|>", StringComparison.Ordinal) ||
+            !text.Contains("<|Speech|>", StringComparison.Ordinal) && Tags().Matches(text).Any(m => NonSpeechEvent(m.Value))) return "";
+        return Tags().Replace(text, "").Trim();
+    }
 
     public static VoiceResult Select(string transcript, string wakeWord, IReadOnlyList<string> vocabulary)
     {

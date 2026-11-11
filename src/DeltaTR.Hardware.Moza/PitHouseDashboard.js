@@ -30,7 +30,7 @@ function createDeltaTrDashboardSwitch() {
         if (manager !== next || device !== String(info.mcuUid)) {
             if (model) model.destroy();
             // Pit House regenerates GUIDs on import; resolve the uniquely named uploaded dashboard.
-            model = Qt.createQmlObject('import QtQuick 2.15; import RacingSimulator 1.0; Item { visible: false; property alias manager: rows.manager; property alias ids: rows.ids; DashboardListModel { id: rows } Repeater { id: entries; model: rows; delegate: Item { property var info: model.localInfo } } function radioIds() { var found = []; for (var i = 0; i < entries.count; i++) { var row = entries.itemAt(i); if (row && row.info && row.info.title === "DeltaTR KS Pro Wave Radio") found.push(String(row.info.id)); } return found; } }', deltaTrBridgeTimer);
+            model = Qt.createQmlObject('import QtQuick 2.15; import RacingSimulator 1.0; Item { visible: false; property alias manager: rows.manager; property alias ids: rows.ids; DashboardListModel { id: rows } Repeater { id: entries; model: rows; delegate: Item { property var info: model.localInfo } } function radioIds() { var found = []; for (var i = 0; i < entries.count; i++) { var row = entries.itemAt(i); if (row && row.info && row.info.title === "DeltaTR KS Pro Fullscreen Radio") found.push(String(row.info.id)); } return found; } }', deltaTrBridgeTimer);
             model.manager = next; manager = next; device = String(info.mcuUid);
             previous = ""; owns = false; pending = ""; suppressed = ""; radioId = "";
         }

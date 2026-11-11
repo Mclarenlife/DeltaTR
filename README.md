@@ -2,19 +2,19 @@
 
 精简的本地赛车 Team Radio。读取 Assetto Corsa Competizione、Le Mans Ultimate 或 iRacing 遥测，按住 F8 直接询问车辆或赛场状况，由工程师语音回答。
 
-**当前版本：0.13.4。** KS Pro 支持保留 Pit House 的智能仪表切换：共用讲话键，短按切换 DeltaTR / 原比赛仪表，长按 0.5 秒开始讲话、松开发送；赛事提醒和自动化播报临时弹出，结束后返回。手动打开的画面保持显示。使用独立文字字段，支持旧桥接升级与双文件备份恢复。升级时点击「安装 / 升级桥接」并重启 Pit House；保留已上传的 `DeltaTR KS Pro Wave Radio` 仪表，先在 Pit House 选择比赛仪表，再开启方向盘屏显。详见 [KS Pro 使用说明](docs/MOZA_KS_PRO.md)。
+**当前版本 0.15.0** 桌面工作区支持在顶栏切换深色和浅色外观，并记住选择。 可按游戏置顶多个词库项目，并在「设置 → 工程师音色」调整播报语速。支持在遥测问句中修正同音词、句尾重复和整句回声。例如“台温多少多少”可按“胎温多少”查询。支持腾讯云工程师音色。在「设置 → 工程师音色」填写 AppID、SecretId 和 SecretKey，可先试听再保存。 支持用口语查询遥测。例如“帮我看看四条胎各有多热”“左前胎压有没有超过二十六点五 psi”。只说“左前胎多少”时，听到追问后可直接回答“胎温”或“胎压”。 KS Pro 支持保留 Pit House 的智能仪表切换：共用讲话键，短按切换 DeltaTR / 原比赛仪表，长按 0.5 秒开始讲话、松开发送；赛事提醒和自动化播报临时弹出，结束后返回。手动打开的画面保持显示。使用独立文字字段，支持旧桥接升级与双文件备份恢复。升级时点击「安装 / 升级桥接」并重启 Pit House；请重新上传新版 `DeltaTR KS Pro Fullscreen Radio` 仪表，先在 Pit House 选择比赛仪表，再开启方向盘屏显。详见 [KS Pro 使用说明](docs/MOZA_KS_PRO.md)。
 
 ## 开始使用
 
 - 启动后先在左侧栏顶部选择游戏。选择后软件自动等待对应游戏并读取遥测。进入座舱后，可在无线电页面查看适用问法。
 - 演示：选择游戏后点击「启动演示」。用 `Start-Demo.cmd` 启动时，选择游戏即进入该游戏的演示。切换游戏会停止当前采集和讲话、关闭屏显并清空对话；自定义词库按游戏保存。
 - ACC 支持本车共享内存和赛事广播。LMU 使用原生 `LMU_Data` 接口读取玩家车辆。iRacing 使用本机 SDK 实时变量；四轮冷胎压设定与上次测量的轮胎数据单独标注。
-- 已构建程序：`artifacts/releases/0.13.4/app/DeltaTR.App.exe`。发布目录需要整体保留。
+- 已构建程序：`artifacts/releases/0.15.0/app/DeltaTR.App.exe`。发布目录需要整体保留。
 - 在「设置 → 语音与无线电」点击「重新绑定」，按一次键盘键或方向盘上的实体按钮，显示设备名称和按钮后即可使用。Esc 取消。默认按住 **F8** 讲话，松开发送；也可按住无线电页面的按钮。单次最多 15 秒。
 - 三款游戏都可试问「还剩多少油」「排名」「现在车速多少」。轮胎与其他可用问法见当前游戏的「自定义词库」。
 - 新的讲话会打断播报；「停止播报」立即停止声音。输入文字也可得到语音回答。
 
-需要 Windows x64 和 .NET 10 Desktop Runtime。在「设置 → 语音与无线电 → 识别引擎」可切换 SenseVoice、Windows 识别和 Zipformer，选择立即保存。新安装默认 SenseVoice，旧配置保留已有引擎选择。完整发布目录自带 SenseVoice 中文整句识别模型与 Zipformer 中英双语 CPU 模型；Windows 识别使用系统中文组件。三者共用自定义问法、唤醒词和麦克风设置。SenseVoice 使用应用层词库匹配及同音纠错，不宣称支持原生热词解码。播报使用系统的中文声音。
+需要 Windows x64 和 .NET 10 Desktop Runtime。在「设置 → 语音与无线电 → 识别引擎」可切换 SenseVoice、Windows 识别和 Zipformer，选择立即保存。新安装默认 SenseVoice，旧配置保留已有引擎选择。完整发布目录自带 SenseVoice 中文整句识别模型与 Zipformer 中英双语 CPU 模型；Windows 识别使用系统中文组件。三者共用自定义问法、唤醒词和麦克风设置。SenseVoice 使用应用层词库匹配及同音纠错，不宣称支持原生热词解码。播报可使用 Windows 系统声音，或腾讯云实时中文语音合成。
 
 连接 ACC 时，在同一台电脑和同一 Windows 会话中启动游戏及 DeltaTR，载入练习赛后点击「驾驶」。软件会自动读取共享遥测。在演示模式下点击「连接 ACC」切换。顶栏显示驾驶、暂停或重播状态，设置的数据源区域显示详细原因。暂停时请返回座舱并解除暂停。设置中的「显示与播报单位」可以在公制（°C、km/h、L）与英制（°F、mph、英制加仑）之间切换。胎压在两种模式下均使用 ACC 的 psi。
 
@@ -89,3 +89,5 @@ docs/                             使用说明、架构与验证记录
 构建在 `artifacts/build-tr`，发布在 `artifacts/releases/0.12.0/app`。语音集成检查需要系统中文引擎权限，普通 Windows 用户即可；受限沙箱可能无法使用声音组件。`-Voice` 不采集麦克风、不播放声音，仅输出文本日志和界面截图。
 
 [语音选型与验证](docs/SPEECH_RESEARCH.md) · [界面说明](docs/UI_GUIDE.md) · [语音说明](docs/VOICE_COMMANDS.md) · [0.2.0 验证记录](docs/VALIDATION_TR_020.md) · [第三方依赖](docs/THIRD_PARTY.md)
+
+桌面界面设计参考 Damir Sokolovsky 的 [unslop](https://github.com/heydamir/unslop)（CC BY 4.0）。

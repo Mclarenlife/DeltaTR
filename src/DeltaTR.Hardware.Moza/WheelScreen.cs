@@ -69,7 +69,7 @@ public sealed class WheelScreen : IAsyncDisposable
                     if (current.State != previous?.State || current.Turn != previous?.Turn)
                         pageStart = clock.Elapsed;
                     previous = current;
-                    return Encode(current, clock.Elapsed - pageStart);
+                    return EncodeRows(current, clock.Elapsed - pageStart);
                 }, cancellation.Token);
             }
             catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
@@ -89,29 +89,52 @@ public sealed class WheelScreen : IAsyncDisposable
     }
     public async ValueTask DisposeAsync() => await StopAsync();
 
-    // A single string channel holds state and one UTF-8 page. No JSON escaping expansion.
-    // Page changes every five seconds; the full response remains visible in the app.
-    public static TimeSpan ReadingDuration(string text) => TimeSpan.FromSeconds(Math.Max(8, SplitPages(text).Count * 5 + 1));
+    public const int RowCount = MozaDisplaySession.RowCount;
+    internal const int SecondsPerPage = 8;
 
-    private static List<string> SplitPages(string text)
+
+    // Each 30 px line has 744 safe horizontal pixels and its own bounded wire field.
+    // Reserve a full em for wide Latin capitals, CJK and supplementary characters.
+    private static List<string> Wrap(string text)
     {
-        var pages = new List<string>(); var page = new StringBuilder(); int bytes = 0;
-        foreach (var rune in text.EnumerateRunes().Take(4000))
+        var rows = new List<string>();
+        var line = new StringBuilder();
+        int width = 0;
+        foreach (var rune in text.ReplaceLineEndings("\n").EnumerateRunes().Take(4000))
         {
-            int n = rune.Utf8SequenceLength;
-            if (bytes + n > 105) { pages.Add(page.ToString()); page.Clear(); bytes = 0; }
-            page.Append(rune); bytes += n;
+            if (rune.Value == '\n')
+            {
+                rows.Add(line.ToString()); line.Clear(); width = 0;
+                continue;
+            }
+            int pixels = rune.Value is >= '0' and <= '9' or ' ' ? 18 : 30;
+            if (width + pixels > 744)
+            {
+                rows.Add(line.ToString()); line.Clear(); width = 0;
+            }
+            line.Append(rune); width += pixels;
         }
-        pages.Add(page.ToString());
-        return pages;
+        rows.Add(line.ToString());
+        return rows;
     }
 
-    public static string Encode(WheelMessage message, TimeSpan elapsed)
+    public static TimeSpan ReadingDuration(string text) =>
+        TimeSpan.FromSeconds(((Wrap(text).Count + RowCount - 1) / RowCount) * SecondsPerPage + 1);
+
+    public static string[] EncodeRows(WheelMessage message, TimeSpan elapsed)
     {
-        var state = message.State is "listen" or "think" or "reply" or "offline" ? message.State : "idle";
-        var pages = SplitPages(message.Text);
-        int index = (int)(Math.Max(0, elapsed.TotalSeconds) / 5 % pages.Count);
-        string marker = pages.Count > 1 ? $" [{index + 1}/{pages.Count}]" : "";
-        return state + "|" + pages[index] + marker;
+        string state = message.State is "listen" or "think" or "reply" or "offline" ? message.State : "idle";
+        var lines = Wrap(message.Text);
+        int pages = (lines.Count + RowCount - 1) / RowCount;
+        int page = state == "listen" ? pages - 1 : (int)(Math.Max(0, elapsed.TotalSeconds) / SecondsPerPage % pages);
+        int first = page * RowCount;
+        int count = Math.Min(RowCount, lines.Count - first);
+        var result = new string[RowCount];
+        for (int row = 0; row < result.Length; row++)
+        {
+            int y = row < count ? (248 - count * 44) / 2 + row * 44 : 102;
+            result[row] = $"{state}|{y}|" + (row < count ? lines[first + row] : "");
+        }
+        return result;
     }
 }

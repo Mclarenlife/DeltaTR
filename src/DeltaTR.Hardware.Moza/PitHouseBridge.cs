@@ -27,7 +27,7 @@ public sealed record BridgeSettings(int Port, string Key)
 }
 
 /// <summary>Loopback-only, authenticated, bounded HTTP reader for the Pit House QML client.
-/// Protocol 3 serves a dedicated field client with reversible dashboard switching.
+/// Protocol 4 serves a dedicated field client with reversible dashboard switching.
 /// Acknowledgement means the QML method returned, never proof of physical rendering.</summary>
 public sealed class PitHouseBridge : IAsyncDisposable
 {
@@ -41,7 +41,8 @@ public sealed class PitHouseBridge : IAsyncDisposable
     private WheelMessage message = new("idle", "");
     private DateTimeOffset updated, pageStart, lastPoll, lastAck;
     private bool enabled, outdatedClient;
-    private string encoded = "", session = "";
+    private string[] encoded = [];
+    private string session = "";
     private string? failure;
     private long sequence, acknowledged;
     private string screenMode = "keep", screenStatus = "waiting";
@@ -49,11 +50,12 @@ public sealed class PitHouseBridge : IAsyncDisposable
     private bool? radioVisible;
     public bool? IsRadioVisible { get { lock (sync) return radioVisible; } }
     public string ScreenStatus { get { lock (sync) return screenStatus; } }
-    public void SetScreenMode(string mode, long turn)
+    public void Update(WheelMessage value, string mode, long turn)
     {
         if (mode is not ("keep" or "radio" or "return")) throw new ArgumentException("Unknown screen mode");
         lock (sync)
         {
+            Update(value);
             if (screenMode != mode || screenTurn != turn) { screenMode = mode; screenTurn = turn; screenRequest++; }
         }
     }
@@ -77,7 +79,7 @@ public sealed class PitHouseBridge : IAsyncDisposable
                 {
                     "radio" => "DeltaTR 画面", "race" => "比赛仪表", "switching" => "正在切换仪表",
                     "no-return" => "请先在 Pit House 选择比赛仪表，以便记录返回位置",
-                    "dashboard" => "请上传 Wave Radio 仪表", "device" => "等待 KS Pro 连接",
+                    "dashboard" => "请上传 Fullscreen Radio 仪表", "device" => "等待 KS Pro 连接",
                     "timeout" => "仪表切换未确认，请重试", "external" => "已尊重手动切换",
                     "missing-return" => "原仪表已移除，请在 Pit House 重新选择", "busy" => "设备忙，等待切换",
                     "unavailable" => "仪表切换接口不可用", _ => "专用字段在线"
@@ -97,7 +99,7 @@ public sealed class PitHouseBridge : IAsyncDisposable
     public void Start(BridgeSettings value)
     {
         if (IsRunning) throw new InvalidOperationException("屏显桥接已启动。");
-        if (!installationReady()) throw new InvalidOperationException("请安装或升级专用字段桥接，重启 Pit House，并应用 DeltaTR KS Pro Wave Radio 仪表。");
+        if (!installationReady()) throw new InvalidOperationException("请安装或升级专用字段桥接，重启 Pit House，并应用 DeltaTR KS Pro Fullscreen Radio 仪表。");
         if (value.Key.Length != 64 || !value.Key.All(Uri.IsHexDigit)) throw new ArgumentException("Invalid bridge key");
         settings = value; failure = null;
         var socket = new TcpListener(IPAddress.Loopback, value.Port) { ExclusiveAddressUse = true };
@@ -106,7 +108,7 @@ public sealed class PitHouseBridge : IAsyncDisposable
         var cancellation = stop = new();
         lock (sync)
         {
-            session = Guid.NewGuid().ToString("N"); enabled = true; encoded = ""; sequence = acknowledged = 0;
+            session = Guid.NewGuid().ToString("N"); enabled = true; encoded = []; sequence = acknowledged = 0;
             lastPoll = lastAck = default; updated = pageStart = now(); outdatedClient = false; radioVisible = null; screenStatus = "waiting";
         }
         worker = RunAsync(socket, cancellation.Token);
@@ -155,7 +157,7 @@ public sealed class PitHouseBridge : IAsyncDisposable
             !CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(headers.GetValueOrDefault("X-DeltaTR-Key", "")), Encoding.ASCII.GetBytes(settings!.Key)))
         { await ReplyAsync(stream, 403, "{}", token); return; }
         var query = request[1][11..].Split('&').Select(s => s.Split('=', 2)).Where(p => p.Length == 2).ToArray();
-        if (query.Count(p => p[0] == "protocol") != 1 || query.First(p => p[0] == "protocol")[1] != "3" ||
+        if (query.Count(p => p[0] == "protocol") != 1 || query.First(p => p[0] == "protocol")[1] != "4" ||
             query.Count(p => p[0] == "field") != 1 || query.First(p => p[0] == "field")[1] != "DeltaTRRadio")
         {
             lock (sync) outdatedClient = true;
@@ -174,10 +176,10 @@ public sealed class PitHouseBridge : IAsyncDisposable
             { acknowledged = ack; lastAck = time; }
             bool fresh = time - updated < TimeSpan.FromSeconds(3);
             bool active = enabled && fresh;
-            string text = active ? WheelScreen.Encode(message, time - pageStart) : "idle|";
-            if (text != encoded) { encoded = text; sequence++; }
-            json = JsonSerializer.Serialize(new { version = 3, field = PitHouseBridgeInstaller.Field, session, seq = sequence, enabled = active, screenMode, screenRequest,
-                allowReset = true, text, expires = time.AddSeconds(2).ToUnixTimeMilliseconds() });
+            var rows = WheelScreen.EncodeRows(active ? message : new("idle", ""), time - pageStart);
+            if (!rows.SequenceEqual(encoded)) { encoded = rows; sequence++; }
+            json = JsonSerializer.Serialize(new { version = 4, field = PitHouseBridgeInstaller.Field, session, seq = sequence, enabled = active, screenMode, screenRequest,
+                allowReset = true, rows, expires = time.AddSeconds(2).ToUnixTimeMilliseconds() });
         }
         await ReplyAsync(stream, 200, json, token);
     }

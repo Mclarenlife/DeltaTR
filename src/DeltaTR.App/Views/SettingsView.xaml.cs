@@ -15,9 +15,20 @@ public partial class SettingsView : UserControl
         Unloaded += (_, _) => (DataContext as MainViewModel)?.SetBindingMode(false);
         DataContextChanged += (_, _) =>
         {
-            if (DataContext is ViewModels.MainViewModel vm) KeyInput.Password = vm.ApiKeyEdit;
+            if (DataContext is MainViewModel vm)
+            {
+                KeyInput.Password = vm.ApiKeyEdit;
+                CloudId.Password = vm.TencentSecretId;
+                CloudKey.Password = vm.TencentSecretKey;
+            }
         };
     }
+    private void JumpToSection(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: FrameworkElement section })
+            SettingsScroll.ScrollToVerticalOffset(section.TranslatePoint(new Point(), Sections).Y);
+    }
+
     private void ToggleBinding(object sender, RoutedEventArgs e)
     {
         if (DataContext is not MainViewModel vm) return;
@@ -36,5 +47,11 @@ public partial class SettingsView : UserControl
     private void KeyChanged(object sender, System.Windows.RoutedEventArgs args)
     {
         if (DataContext is ViewModels.MainViewModel vm) vm.ApiKeyEdit = KeyInput.Password;
+    }
+    private void CloudCredentialChanged(object sender, RoutedEventArgs args)
+    {
+        if (DataContext is not MainViewModel vm) return;
+        if (sender == CloudId) vm.TencentSecretId = CloudId.Password;
+        else if (sender == CloudKey) vm.TencentSecretKey = CloudKey.Password;
     }
 }

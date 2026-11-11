@@ -41,8 +41,9 @@ internal static class AutomationTests
             stable = Frame(ms, 6);
             monitor.Observe(stable, stable.CapturedAt, RaceAlertKind.Position);
         }
+        stable.Fields["gapAhead"] = new(1280, "ms", stable.CapturedAt, DataQuality.Valid, "fixture", "");
         var text = monitor.TakeReady() ?? "";
-        Require(text.Contains("降至第 6 名") && text.Contains("对手") && text.Contains("快 20.0 km/h"), "Lost rank or current rival speed");
+        Require(text.Contains("降至第 6 名") && text.Contains("对手") && text.Contains("落后前车 1.3 秒") && !text.Contains("km/h"), "Lost rank or current rival speed");
         monitor.Observe(Frame(17000, 6), Start.AddSeconds(17), RaceAlertKind.Position);
         Require(monitor.TakeReady() == null, "Repeated overtake alert");
         var noSpeed = stable.Traffic!.Cars[1] with { SpeedKph = null };

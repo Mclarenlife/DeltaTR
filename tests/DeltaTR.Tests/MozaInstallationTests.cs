@@ -32,7 +32,7 @@ internal static class MozaInstallationTests
             Check(store.IsInstalled, "both files installed");
             var result = JsonNode.Parse(File.ReadAllBytes(table))!;
             var sectors = result["sectors"]!.AsArray(); var before = JsonNode.Parse(tableBytes)!;
-            Check(sectors.Count == 3 && JsonNode.DeepEquals(sectors[0], before["sectors"]![0]) && JsonNode.DeepEquals(sectors[1], before["sectors"]![1]), "existing game fields preserved");
+            Check(sectors.Count == 7 && JsonNode.DeepEquals(sectors[0], before["sectors"]![0]) && JsonNode.DeepEquals(sectors[1], before["sectors"]![1]), "existing game fields preserved");
             Check((string?)sectors[2]!["url"] == PitHouseBridgeInstaller.Field && (string?)sectors[2]!["data_type"] == "string", "dedicated string registered");
             Check(!File.ReadAllText(qml).Contains("PlayerName"), "bridge never writes player name");
             byte[] installedQml = File.ReadAllBytes(qml), installedTable = File.ReadAllBytes(table);

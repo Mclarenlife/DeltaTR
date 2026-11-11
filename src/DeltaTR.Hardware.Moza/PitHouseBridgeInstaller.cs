@@ -39,7 +39,7 @@ public static class PitHouseBridgeInstaller
 // An isolated store permits recovery tests without touching the user's installation.
 internal sealed class BridgeInstallation(string folder, string exeHash, string originalHash, string telemetryHash)
 {
-    private sealed record TelemetryFile(string Target, string Original, string Installed);
+    private sealed record TelemetryFile(string Target, string Original, string Installed, string? PreviousInstalled = null);
     private sealed record Manifest(string Target, string Original, string Installed, string ConnectionHash,
         int FormatVersion = 1, TelemetryFile? Telemetry = null, string? PreviousInstalled = null, int BridgeRevision = 2);
     private string ManifestPath => Path.Combine(folder, "installation.json");
@@ -67,7 +67,7 @@ internal sealed class BridgeInstallation(string folder, string exeHash, string o
                 var m = ReadManifest();
                 if (m is null) return false;
                 ValidateManifest(m);
-                return m.FormatVersion == 2 && m.BridgeRevision == 3 && Hash(File.ReadAllBytes(m.Target)) == m.Installed &&
+                return m.FormatVersion == 2 && m.BridgeRevision == 4 && Hash(File.ReadAllBytes(m.Target)) == m.Installed &&
                     Hash(File.ReadAllBytes(m.Telemetry!.Target)) == m.Telemetry.Installed &&
                     Hash(File.ReadAllBytes(Path.Combine(Bin(m), "MOZA Pit House.exe"))) == exeHash;
             }
@@ -96,7 +96,8 @@ internal sealed class BridgeInstallation(string folder, string exeHash, string o
         string qmlHash = Hash(currentQml), tableHash = Hash(currentTelemetry);
         if (qmlHash != originalHash && (existing is null || (qmlHash != existing.Installed && qmlHash != existing.PreviousInstalled)))
             throw new IOException("Pit House 界面文件已改变，未覆盖，请保留备份。");
-        if (tableHash != telemetryHash && (existing?.FormatVersion != 2 || tableHash != existing.Telemetry!.Installed))
+        if (tableHash != telemetryHash && (existing?.FormatVersion != 2 ||
+            tableHash != existing.Telemetry!.Installed && tableHash != existing.Telemetry.PreviousInstalled))
             throw new IOException("Pit House 遥测定义文件已改变，未覆盖，请保留备份。");
         byte[] original = qmlHash == originalHash ? currentQml : ReadBackup(BackupPath, originalHash);
         byte[] table = tableHash == telemetryHash ? currentTelemetry : ReadBackup(TelemetryBackup, telemetryHash);
@@ -111,7 +112,7 @@ internal sealed class BridgeInstallation(string folder, string exeHash, string o
         string source = Encoding.UTF8.GetString(original);
         int closing = source.LastIndexOf('}');
         if (closing < 0 || source.Contains("DELTATR_PITHOUSE_BRIDGE", StringComparison.Ordinal)) throw new IOException("无法识别原始界面结构。");
-        byte[] candidate = Encoding.UTF8.GetBytes(source[..closing] + "\n// DELTATR_PITHOUSE_BRIDGE_V3\n" + bridge + "\n" + source[closing..]);
+        byte[] candidate = Encoding.UTF8.GetBytes(source[..closing] + "\n// DELTATR_PITHOUSE_BRIDGE_V4\n" + bridge + "\n" + source[closing..]);
         var document = JsonNode.Parse(table)!.AsObject();
         var sectors = document["sectors"]!.AsArray();
         if (sectors.Any(x => (string?)x?["url"] == PitHouseBridgeInstaller.Field)) throw new IOException("专用字段已存在，未覆盖。");
@@ -119,15 +120,22 @@ internal sealed class BridgeInstallation(string folder, string exeHash, string o
         entry["name"] = "DeltaTRRadio"; entry["url"] = PitHouseBridgeInstaller.Field; entry["package_level"] = 500;
         entry["short_name"] = new JsonObject { ["zh_CN"] = "DeltaTR 无线电", ["en_US"] = "DeltaTR Radio" };
         entry["descs"] = new JsonObject { ["zh_CN"] = "DeltaTR 独立语音显示", ["en_US"] = "DeltaTR dedicated voice display" };
-        sectors.Add(entry);
+        for (int row = 0; row < WheelScreen.RowCount; row++)
+        {
+            var line = entry.DeepClone();
+            line["url"] = MozaDisplaySession.Field(row);
+            line["name"] = MozaDisplaySession.Field(row).Split('/')[^1];
+            sectors.Add(line);
+        }
         byte[] candidateTable = Encoding.UTF8.GetBytes(document.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-        if (existing?.FormatVersion == 2 && existing.BridgeRevision == 3 && qmlHash == Hash(candidate) && tableHash == Hash(candidateTable) &&
+        if (existing?.FormatVersion == 2 && existing.BridgeRevision == 4 && qmlHash == Hash(candidate) && tableHash == Hash(candidateTable) &&
             existing.ConnectionHash == connectionHash) return;
         Directory.CreateDirectory(folder);
         SaveBackup(BackupPath, original, originalHash); SaveBackup(TelemetryBackup, table, telemetryHash);
         // Durable recovery metadata precedes BOTH mutations; partial installations can be restored.
         var manifest = new Manifest(target, originalHash, Hash(candidate), connectionHash, 2,
-            new(telemetryTarget, telemetryHash, Hash(candidateTable)), qmlHash == originalHash ? null : qmlHash, 3);
+            new(telemetryTarget, telemetryHash, Hash(candidateTable), tableHash == telemetryHash ? null : tableHash),
+            qmlHash == originalHash ? null : qmlHash, 4);
         Replace(ManifestPath, JsonSerializer.SerializeToUtf8Bytes(manifest));
         Replace(telemetryTarget, candidateTable);
         Replace(target, candidate);
@@ -145,7 +153,7 @@ internal sealed class BridgeInstallation(string folder, string exeHash, string o
         {
             table = ReadBackup(TelemetryBackup, telemetryHash);
             string currentTable = Hash(File.ReadAllBytes(m.Telemetry!.Target));
-            if (currentTable != telemetryHash && currentTable != m.Telemetry.Installed)
+            if (currentTable != telemetryHash && currentTable != m.Telemetry.Installed && currentTable != m.Telemetry.PreviousInstalled)
                 throw new IOException("Pit House 遥测定义在安装后发生改变，未覆盖；请保留备份。");
         }
         // Validate every backup and target before touching either file; interrupted restores are retryable.

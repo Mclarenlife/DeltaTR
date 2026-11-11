@@ -7,6 +7,7 @@ namespace DeltaTR.App.Settings;
 
 internal sealed record RadioSettings
 {
+    public bool LightTheme { get; init; }
     public string InputName { get; init; } = "";
     public string OutputName { get; init; } = "";
     public bool UseZipformer { get; init; } // Legacy setting retained for migration.
@@ -22,6 +23,8 @@ internal sealed record RadioSettings
     public List<Engineer.AutomationRule> Automations { get; init; } = [];
     public Dictionary<string, Engineer.StrategyProfile> Strategies { get; init; } = [];
     public int Volume { get; init; } = 80;
+    public int SpeechRate { get; init; }
+    public Dictionary<string, HashSet<string>> PinnedVocabulary { get; init; } = [];
     public Input.TalkBinding? PushToTalkBinding { get; init; }
     public int TalkKey { get; init; } = 0x77;
     public bool WheelSmartSwitch { get; init; } = true;
@@ -39,6 +42,11 @@ internal sealed record RadioSettings
     public string Address { get; init; } = "";
     public string Model { get; init; } = "";
     public string ProtectedKey { get; init; } = "";
+    public bool UseTencentTts { get; init; }
+    public string TencentAppId { get; init; } = "";
+    public string ProtectedTencentId { get; init; } = "";
+    public string ProtectedTencentKey { get; init; } = "";
+    public int TencentVoiceId { get; init; } = 403002;
 
     internal static string FileName => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DeltaTR", "radio.json");
     internal static RadioSettings Load(string path) => File.Exists(path)
@@ -53,6 +61,7 @@ internal sealed record RadioSettings
 
     internal static string Encrypt(string key) => key.Length == 0 ? "" : Convert.ToBase64String(
         ProtectedData.Protect(Encoding.UTF8.GetBytes(key), null, DataProtectionScope.CurrentUser));
-    internal string Decrypt() => ProtectedKey.Length == 0 ? "" : Encoding.UTF8.GetString(
-        ProtectedData.Unprotect(Convert.FromBase64String(ProtectedKey), null, DataProtectionScope.CurrentUser));
+    internal string Decrypt() => Decrypt(ProtectedKey);
+    internal static string Decrypt(string value) => value.Length == 0 ? "" : Encoding.UTF8.GetString(
+        ProtectedData.Unprotect(Convert.FromBase64String(value), null, DataProtectionScope.CurrentUser));
 }

@@ -45,6 +45,16 @@ internal static class VoiceTests
             Check(MicrophoneCapture.MeetsInputThreshold(0.1, 0));
             Check(MicrophoneCapture.MeetsInputThreshold(100, 100));
         });
+        Test("isolated button clicks fail the duration gate but a quiet short syllable passes", () =>
+        {
+            var samples = new short[3200];
+            samples[159] = short.MaxValue;
+            samples[160] = short.MaxValue;
+            samples[2559] = short.MaxValue;
+            Check(!MicrophoneCapture.HasSustainedInput(samples, 2));
+            for (int i = 650; i < 1450; i++) samples[i] = (short)(800 * Math.Sin(i * 0.1));
+            Check(MicrophoneCapture.HasSustainedInput(samples, 2));
+        });
         Test("Zipformer transcript routes by saved aliases or wake prefix without inventing confidence", () =>
         {
             string[] custom = ["报一下路温","TC几档"];
@@ -95,6 +105,52 @@ internal static class VoiceTests
                 if (heard.StartsWith("左前") || heard.StartsWith("右后")) Check(keys.Length == 1);
             }
         });
+        Test("tyre homophones show the same corrected question in previews, accepted status and telemetry", () =>
+        {
+            foreach (var game in new[] { RacingGame.ACC, RacingGame.LMU })
+            {
+                var q = new TelemetryQueries(new Dictionary<string, string[]>(), "工程师", game);
+                var words = q.RecognitionPhrases;
+                foreach (var heard in new[] { "台温多少", "台 温 多 少？" })
+                {
+                    Check(TelemetrySpeechMatcher.DisplayQuestion(heard, "工程师", words) == "胎温多少");
+                    foreach (var result in new[] { ZipformerSpeech.Select(heard, "工程师", words),
+                        SenseVoiceSpeech.Select(heard, "工程师", words), VoiceCommandPolicy.Select([(heard,.9f)], "工程师", .35f, words) })
+                    {
+                        Check(result.Text == "胎温多少" && result.DisplayMessage == "已识别“胎温多少”");
+                        Check(q.Answer(result.Text!, SyntheticAdapter.Create(1, 0, now) with { Game = game }, now)
+                            .EvidenceFields.SequenceEqual(Metrics.Wheels.Select(w => "temperature." + w)));
+                    }
+                }
+                foreach (var literal in new[] { "平台温度", "工程师，台温多少", "不要报台温多少" })
+                    Check(TelemetrySpeechMatcher.DisplayQuestion(literal, "工程师", words) == literal);
+            }
+            var custom = new TelemetryQueries(new Dictionary<string, string[]> { ["airTemperature"] = ["台温多少"] }, "工程师");
+            Check(TelemetrySpeechMatcher.DisplayQuestion("台温多少", "工程师", custom.RecognitionPhrases) == "台温多少");
+            Check(SenseVoiceSpeech.Select("台温多少", "工程师", custom.RecognitionPhrases).Text == "台温多少");
+        });
+        Test("iRacing tyre question reaches last measured tyres and labels the answer", () =>
+        {
+            var q = new TelemetryQueries(new Dictionary<string, string[]>(), "工程师", RacingGame.IRacing);
+            var frame = SyntheticAdapter.Create(1, 0, now) with { Game = RacingGame.IRacing };
+            foreach (var wheel in Metrics.Wheels)
+                frame.Fields["pitTemp." + wheel] = frame.Fields["temperature." + wheel];
+            foreach (var result in new[] { SenseVoiceSpeech.Select("台温多少？", "工程师", q.RecognitionPhrases),
+                ZipformerSpeech.Select("台温多少", "工程师", q.RecognitionPhrases),
+                VoiceCommandPolicy.Select([("台温多少", .8f)], "工程师", .35f, q.RecognitionPhrases) })
+            {
+                Check(result.Text == "胎温多少" && result.DisplayMessage == "已识别“胎温多少”");
+                var reply = q.Answer(result.Text!, frame, now);
+                Check(reply.Text.Contains("上次测量") && reply.HasVerifiedData &&
+                    reply.EvidenceFields.SequenceEqual(Metrics.Wheels.Select(w => "pitTemp." + w)));
+            }
+            Check(TelemetrySpeechMatcher.DisplayQuestion("台温多少", "工程师", q.RecognitionPhrases) == "胎温多少");
+            Check(q.Answer("右后台温多少", frame, now).EvidenceFields.SequenceEqual(["pitTemp.RR"]));
+            var current = q.Answer("当前台温多少", frame, now);
+            Check(!current.HasVerifiedData && current.Text.Contains("上次胎温多少"));
+            frame.Fields.Remove("pitTemp.RR");
+            Check(!q.Answer("台温多少", frame, now).HasVerifiedData);
+        });
         Test("ambiguous repairs, negative questions and near wake words are rejected", () =>
         {
             string[] custom = ["胎温", "台温", "工程师台温", "左前胎温多少"];
@@ -108,6 +164,83 @@ internal static class VoiceTests
             Check(ZipformerSpeech.Select("工程师，看看台温", "工程师", custom).Text == "工程师，看看台温");
             var quiet = VoiceCommandPolicy.Select([("台温", .2f)], "队长", .35f, ["胎温"]);
             Check(quiet.Text == null && quiet.Candidate == "胎温");
+        });
+        Test("PTT transcript echoes resolve once with the original wheel, quantity and confidence", () =>
+        {
+            var queries = new TelemetryQueries();
+            var vocabulary = queries.RecognitionPhrases;
+            var frame = SyntheticAdapter.Create(1, 0, now);
+            foreach (var (heard, clean) in new[] {
+                ("胎温多少多少", "胎温多少"), ("台温多少少", "胎温多少"), ("台温多少手？", "胎温多少"),
+                ("左前台温多少，多少？", "左前胎温多少"), ("胎温多少？胎温多少。", "胎温多少"),
+                ("请问", ""), ("前台温控多少多少", ""), ("台温多少不要", ""),
+                ("左前胎温多少，右后胎温多少", ""), ("气温多少，胎温多少", ""),
+                ("工成师，台温多少多少", ""), ("胎温多少轰隆", "") })
+            {
+                foreach (var result in new[] { ZipformerSpeech.Select(heard, "工程师", vocabulary),
+                    SenseVoiceSpeech.Select(heard, "工程师", vocabulary),
+                    VoiceCommandPolicy.Select([(heard, .9f)], "工程师", .35f, vocabulary) })
+                {
+                    if (clean.Length == 0) Check(result.Text == null);
+                    else Check(result.Text != null && result.Message.Contains(heard) &&
+                        queries.Answer(result.Text, frame, now).EvidenceFields.SequenceEqual(queries.Answer(clean, frame, now).EvidenceFields));
+                }
+            }
+            foreach (var tail in new[] { "多少", "少", "胎温多少" })
+                Check(VoiceCommandPolicy.Select([("胎温多少", .9f), (tail, .8f)], "工程师", .35f, vocabulary).Text == "胎温多少");
+            Check(VoiceCommandPolicy.Select([("胎温多少", .9f), ("多少", .1f)], "工程师", .35f, vocabulary).Text == null);
+            Check(ZipformerSpeech.Select("台温多少多少", "队长", ["油量"]).Text == null);
+            Check(ZipformerSpeech.Select("台温多少多少", "队长", ["台温多少", "胎温多少"]).Text == "台温多少");
+            string threshold = "左前胎压超过26.55psi";
+            Check(ZipformerSpeech.Select(threshold + "，" + threshold, "工程师", vocabulary).Text == threshold);
+            Check(ZipformerSpeech.Select("工程师，胎温多少多少", "工程师", vocabulary).Text == "工程师，胎温多少多少");
+        });
+        Test("SenseVoice drops non-speech results even when they contain plausible commands", () =>
+        {
+            using var background = System.Text.Json.JsonDocument.Parse("""{"lang":"<|zh|>","event":"<|BGM|>","text":"胎温多少"}""");
+            Check(SenseVoiceSpeech.ReadTranscript(background.RootElement) == "");
+            Check(SenseVoiceSpeech.Select("<|nospeech|>胎温多少", "工程师", ["胎温多少"]).Text == null);
+            Check(SenseVoiceSpeech.Select("<|Cough|>工程师进站", "工程师", ["胎温多少"]).Text == null);
+            Check(SenseVoiceSpeech.Select("<|zh|><|Speech_Noise|>胎温多少", "工程师", ["胎温多少"]).Text == "胎温多少");
+        });
+        Test("conversational readings keep wheel scope and work across recognition engines", () =>
+        {
+            var q = new TelemetryQueries();
+            var frame = SyntheticAdapter.Create(1, 0, now);
+            foreach (var (phrase, keys) in new (string, string[])[] {
+                ("帮我看看四条胎各有多热", Metrics.Wheels.Select(w => "temperature." + w).ToArray()),
+                ("左前胎现在多少个 PSI？", ["pressure.FL"]), ("麻烦看一下右后胎现在多少度", ["temperature.RR"]),
+                ("请帮我查一下目前排名多少", ["position"]) })
+            {
+                foreach (var result in new[] { ZipformerSpeech.Select(phrase, "工程师", q.RecognitionPhrases),
+                    SenseVoiceSpeech.Select(phrase, "工程师", q.RecognitionPhrases),
+                    VoiceCommandPolicy.Select([(phrase, .8f)], "工程师", .35f, q.RecognitionPhrases) })
+                    Check(result.Text != null && q.Answer(result.Text, frame, now).EvidenceFields.SequenceEqual(keys));
+            }
+            var unclear = q.Answer("帮我看看左前胎多少", frame, now);
+            Check(!unclear.HasVerifiedData && unclear.WheelToClarify == "左前");
+            Check(q.Answer(q.CompleteWheelQuestion("左前", "胎压"), frame, now).EvidenceFields.SequenceEqual(["pressure.FL"]));
+            Check(q.CompleteWheelQuestion("左前", "排名") == "排名");
+            foreach (var bad in new[] { "不要告诉我左前胎多少度", "如果左前胎压低于26就进站", "左前和右后胎压是多少", "我是不是应该降低胎压", "工成师左前胎多少" })
+                Check(ZipformerSpeech.Select(bad, "工程师", q.RecognitionPhrases).Text == null);
+            var ir = new TelemetryQueries(new Dictionary<string, string[]>(), "工程师", RacingGame.IRacing);
+            Check(!ir.Answer("帮我看看四条胎各有多热", frame, now).HasVerifiedData);
+            var custom = new TelemetryQueries(new Dictionary<string, string[]> { ["pressure.FL"] = ["前掌读数"] }, "工程师");
+            Check(custom.Answer("请帮我查一下前掌读数", frame, now).EvidenceFields.SequenceEqual(["pressure.FL"]));
+            Check(ZipformerSpeech.Select("左前胎现在多少个psi", "工程师", custom.RecognitionPhrases).Text == null);
+        });
+        Test("spoken thresholds retain decimals, units, equality and freshness", () =>
+        {
+            var q = new TelemetryQueries();
+            var frame = SyntheticAdapter.Create(1, 0, now);
+            frame.Fields["pressure.FL"] = frame.Fields["pressure.FL"] with { Value = 26.5 };
+            foreach (var threshold in new[] { "26.5", "二十六点五" })
+                Check(q.Answer("左前胎压有没有超过" + threshold + "psi", frame, now).Text.Contains("左前轮未高于26.5"));
+            Check(q.Answer("左前胎压低于27psi吗", frame, now).Text.Contains("左前轮低于27"));
+            var imperial = DisplayUnits.ForDisplay(frame, true);
+            Check(q.Answer("左前胎温超过60摄氏度吗", imperial, now).Text.Contains("左前轮高于60 °C"));
+            Check(!q.Answer("左前胎压低于27摄氏度吗", frame, now).HasVerifiedData);
+            Check(!q.Answer("左前胎压低于27psi吗", frame, now.AddMinutes(1)).HasVerifiedData);
         });
         Test("silence refuses", () => Check(VoiceCommandPolicy.Select([]).Text is null));
         Test("low confidence refuses", () => Check(VoiceCommandPolicy.Select([("油量", .4f)]).Text is null));

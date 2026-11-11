@@ -68,6 +68,26 @@ public sealed class MicrophoneCapture : IDisposable
     public static bool MeetsInputThreshold(double peakPercent, int threshold) =>
         peakPercent > 0 && peakPercent <= 100 && peakPercent >= threshold;
 
+    public bool HasSustainedInput(int threshold) =>
+        HasSustainedInput(MemoryMarshal.Cast<byte, short>(buffer.GetBuffer().AsSpan(0, (int)buffer.Length)), threshold);
+
+    internal static bool HasSustainedInput(ReadOnlySpan<short> samples, int threshold)
+    {
+        // A PTT click can pass the peak gate on its own. Look for just 30 ms of
+        // contiguous energy, well below the user's peak threshold, before decoding.
+        const int window = 160; // 10 ms at 16 kHz
+        double floor = Math.Max(12, 32768 * threshold / 100d * 0.1);
+        int consecutive = 0;
+        for (int i = 0; i + window <= samples.Length; i += window)
+        {
+            double energy = 0;
+            foreach (var sample in samples.Slice(i, window)) energy += (double)sample * sample;
+            consecutive = energy >= floor * floor * window ? consecutive + 1 : 0;
+            if (consecutive >= 3) return true;
+        }
+        return false;
+    }
+
     public void Start() => input.StartRecording();
     public async Task<byte[]> StopAsync()
     {

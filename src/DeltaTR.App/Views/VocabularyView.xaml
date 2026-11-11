@@ -5,15 +5,19 @@
             <TextBox DockPanel.Dock="Top" Text="{Binding VocabularyFilter, UpdateSourceTrigger=PropertyChanged}" ToolTip="输入名称、分组或字段名"
                      AutomationProperties.Name="搜索遥测项目" Margin="0,0,0,8"/>
             <TextBlock DockPanel.Dock="Top" Text="{Binding CatalogSummary}" Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="2,0,0,8"/>
-            <ListBox ItemsSource="{Binding FilteredVocabulary}" SelectedItem="{Binding SelectedField}" ItemContainerStyle="{StaticResource NavigationItemStyle}" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="遥测项目">
-                <ListBox.ItemTemplate><DataTemplate><DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding Group}" Style="{StaticResource Eyebrow}"/><TextBlock Text="{Binding Title}"/></DockPanel></DataTemplate></ListBox.ItemTemplate>
+            <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8" ToolTip="按住 Ctrl 可多选，按住 Shift 可连续选择">
+                <Button x:Name="PinFields" Content="置顶所选" Click="PinSelected" Style="{StaticResource Action}" Margin="0,0,6,0"/>
+                <Button x:Name="UnpinFields" Content="取消置顶" Click="UnpinSelected" Style="{StaticResource Action}"/>
+            </WrapPanel>
+            <ListBox x:Name="Fields" SelectionMode="Extended" ItemsSource="{Binding FilteredVocabulary}" SelectedValuePath="Field" SelectedValue="{Binding SelectedField, Mode=TwoWay}" ItemContainerStyle="{StaticResource NavigationItemStyle}" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="遥测项目">
+                <ListBox.ItemTemplate><DataTemplate><DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding Field.Group}" Style="{StaticResource Eyebrow}"/><TextBlock DockPanel.Dock="Left" Text="置顶" Visibility="{Binding IsPinned, Converter={StaticResource BoolVisibility}}" Foreground="{DynamicResource Accent}" Margin="0,0,6,0" VerticalAlignment="Center" FontSize="11"/><TextBlock Text="{Binding Field.Title}"/></DockPanel></DataTemplate></ListBox.ItemTemplate>
             </ListBox>
         </DockPanel></Border>
         <Border Grid.Column="2" Style="{StaticResource Card}"><DockPanel>
             <StackPanel DockPanel.Dock="Top"><TextBlock Text="{Binding SelectedField.Title}" FontSize="23" FontWeight="SemiBold"/><TextBlock Text="{Binding SelectedField.Key}" Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,4,0,0"/><TextBlock Text="{Binding SelectedField.Detail}" Style="{StaticResource Hint}" TextWrapping="Wrap"/><TextBlock Text="{Binding FieldAvailability}" TextWrapping="Wrap" Style="{StaticResource Hint}" Margin="0,6,0,22"/>
                 <TextBlock Text="识别词" Style="{StaticResource SectionTitle}"/><TextBlock Text="每行一个问法。可添加、改写或删除，保存后用于语音和文字查询。" Style="{StaticResource Hint}" Margin="0,6,0,12"/></StackPanel>
             <StackPanel DockPanel.Dock="Bottom"><WrapPanel Margin="0,16,0,0"><Button Content="保存词库" Style="{StaticResource PrimaryAction}" Command="{Binding SaveVocabularyCommand}" Margin="0,0,10,0"/><Button Content="恢复本项默认词" Style="{StaticResource Action}" Command="{Binding ResetFieldCommand}"/></WrapPanel>
-                <TextBlock Text="{Binding VocabularyStatus}" Foreground="{StaticResource Accent}" TextWrapping="Wrap" Margin="0,10,0,0"/></StackPanel>
+                <TextBlock Text="{Binding VocabularyStatus}" Foreground="{DynamicResource Accent}" TextWrapping="Wrap" Margin="0,10,0,0"/></StackPanel>
             <TextBox Text="{Binding PhraseEditor, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" SpellCheck.IsEnabled="False" FontSize="15" Padding="14" AutomationProperties.Name="自定义识别词"/>
         </DockPanel></Border>
     </Grid>

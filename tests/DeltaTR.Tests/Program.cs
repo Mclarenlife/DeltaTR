@@ -32,22 +32,23 @@ Test("MOZA / long Chinese answers preserve characters across bounded pages", () 
     var answer = string.Concat(Enumerable.Repeat("左前胎温86度，建议保持节奏🏁。", 12));
     var message = new DeltaTR.Hardware.Moza.WheelMessage("reply", answer);
     var restored = new StringBuilder();
-    int count = 0;
-    do
+    for (int page = 0; restored.Length < answer.Length; page++)
     {
-        var encoded = DeltaTR.Hardware.Moza.WheelScreen.Encode(message, TimeSpan.FromSeconds(count * 5));
-        Check(Encoding.UTF8.GetByteCount(encoded) <= 127, "Wire string exceeds one-byte length flag");
-        var marker = encoded.LastIndexOf(" [", StringComparison.Ordinal);
-        int total = int.Parse(encoded[(encoded.LastIndexOf('/') + 1)..^1]);
-        restored.Append(encoded[6..marker]);
-        count++;
-        if (count == total) break;
-        Check(count < 200);
-    } while (true);
+        Check(page < 20);
+        var rows = DeltaTR.Hardware.Moza.WheelScreen.EncodeRows(message, TimeSpan.FromSeconds(page * 8));
+        Equal(5, rows.Length);
+        foreach (var row in rows)
+        {
+            Check(Encoding.UTF8.GetByteCount(row) <= 127);
+            var parts = row.Split('|', 3);
+            Check(parts[0] == "reply" && int.Parse(parts[1]) is >= 0 and <= 204);
+            restored.Append(parts[2]);
+        }
+    }
     Equal(answer, restored.ToString());
-    Check(DeltaTR.Hardware.Moza.WheelScreen.ReadingDuration(answer).TotalSeconds >= count * 5);
-    Equal("idle|", DeltaTR.Hardware.Moza.WheelScreen.Encode(new("idle", ""), TimeSpan.Zero));
-    Equal("offline|未连接游戏", DeltaTR.Hardware.Moza.WheelScreen.Encode(new("offline", "未连接游戏"), TimeSpan.Zero));
+    var sample = new string('胎', 120);
+    Equal(sample, string.Concat(DeltaTR.Hardware.Moza.WheelScreen.EncodeRows(new("reply", sample), TimeSpan.Zero).Select(r => r.Split('|', 3)[2])));
+    Equal("offline|102|未连接游戏", DeltaTR.Hardware.Moza.WheelScreen.EncodeRows(new("offline", "未连接游戏"), TimeSpan.Zero)[0]);
 });
 
 // Golden bytes are deliberately written at literal offsets, not offsets from the decoder under test.
@@ -451,6 +452,7 @@ Test("Strategy / lap samples, fuel observations, pits and session boundaries", S
 AsyncTest("Strategy / preferences and fresh evidence reach AI with local identity excluded", StrategyTests.Request);
 ValidationTests.Register(cases, now, temp);
 VoiceTests.Register(cases, now);
+TencentSpeechTests.Register(cases);
 var failed = 0;
 foreach (var test in cases)
 {

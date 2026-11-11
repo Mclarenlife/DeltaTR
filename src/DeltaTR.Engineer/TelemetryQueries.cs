@@ -3,7 +3,10 @@ using DeltaTR.Core;
 
 namespace DeltaTR.Engineer;
 
-public sealed record EngineerReply(string Text, bool HasVerifiedData, string[] EvidenceFields);
+public sealed record EngineerReply(string Text, bool HasVerifiedData, string[] EvidenceFields)
+{
+    public string? WheelToClarify { get; init; }
+}
 
 /// <summary>Deterministic radio queries shared by text and local voice; all answers obey telemetry quality gates.</summary>
 public sealed class TelemetryQueries
@@ -55,7 +58,7 @@ public sealed class TelemetryQueries
     private readonly Dictionary<string, string> lookup;
     private readonly Dictionary<string, RadioField> fields;
     private readonly RacingGame game;
-    public IReadOnlyList<string> RecognitionPhrases { get; }
+    public RadioLexicon RecognitionPhrases { get; }
     public TelemetryQueries() : this(new Dictionary<string, string[]>(), "") { }
 
     public TelemetryQueries(IReadOnlyDictionary<string, string[]> overrides, string wakeWord, RacingGame game = RacingGame.ACC, IReadOnlyList<NativeField>? current = null)
@@ -109,12 +112,24 @@ public sealed class TelemetryQueries
                 if (fields.ContainsKey(key) && !overrides.ContainsKey(key) && AiRadio.AfterWakeWord(phrase,wakeWord) is null)
                     lookup.TryAdd(phrase,key);
         }
-        RecognitionPhrases = lookup.Keys.Where(k => k.Any(c => c > 127) || !Aliases.ContainsKey(k)).ToArray();
+        RecognitionPhrases = new(lookup.Keys.Where(k => k.Any(c => c > 127) || !Aliases.ContainsKey(k)).ToArray(),
+            lookup, fields.Keys.Except(overrides.Keys));
         if (RecognitionPhrases.Any(p => AiRadio.AfterWakeWord(p, wakeWord) is not null))
             throw new ArgumentException("遥测问法不能以 AI 唤醒词开头，请调整词库或唤醒词。");
     }
 
     public string[] FieldPhrases(string metric) => RecognitionPhrases.Where(p => lookup[p] == metric).ToArray();
+
+    public string CompleteWheelQuestion(string wheel, string text)
+    {
+        var term = text.Trim().TrimEnd('。', '？', '?', '！', '!');
+        if (term is not ("胎温" or "胎压" or "轮胎温度" or "轮胎压力")) return text;
+        var kind = term is "胎温" or "轮胎温度" ? "temperature" : "pressure";
+        if (!lookup.TryGetValue(term, out var metric) || metric != kind) return text;
+        var scoped = wheel + (kind == "temperature" ? "胎温" : "胎压");
+        var corner = wheel switch { "左前" => ".FL", "右前" => ".FR", "左后" => ".RL", "右后" => ".RR", _ => "" };
+        return lookup.GetValueOrDefault(scoped) == kind + corner ? scoped : text;
+    }
 
     public EngineerReply Answer(string question, RaceSnapshot? state, DateTimeOffset now)
     {
@@ -122,9 +137,15 @@ public sealed class TelemetryQueries
             .Split(' ', StringSplitOptions.RemoveEmptyEntries));
         // Windows Chinese ASR may insert spaces between words; English aliases retain word boundaries.
         if (normalized.Any(c => c > 127)) normalized = normalized.Replace(" ", "");
-        if (!lookup.TryGetValue(normalized, out var metric))
-            return new("未匹配遥测问法。可在「自定义词库」查看或添加这个问法。", false, []);
-        return AnswerMetric(metric, state, now);
+        var request = lookup.TryGetValue(normalized, out var metric) ? new RadioRequest(metric) : RecognitionPhrases.Interpret(question);
+        if (request?.WheelToClarify is { } wheel)
+            return new($"你问的是{wheel}胎温还是胎压？", false, []) { WheelToClarify = wheel };
+        if (request?.Metric is not { } target) return new("未匹配遥测问法。可在「自定义词库」查看或添加这个问法。", false, []);
+        if ((target == "pitTemp" || target.StartsWith("pitTemp.", StringComparison.Ordinal)) &&
+            !normalized.Contains("上次") && (normalized.Contains("当前") || normalized.Contains("现在") || normalized.Contains("目前") || normalized.Contains("此刻") || normalized.Contains("实时")))
+            return new("此项提供进站时上次测量的胎温。要听轮胎报告，请说“上次胎温多少”。", false, []);
+        var reading = AnswerMetric(target, state, now);
+        return request.Limit?.Evaluate(reading, state) ?? reading;
     }
 
     internal EngineerReply AnswerMetric(string metric, RaceSnapshot? state, DateTimeOffset now)
@@ -152,7 +173,7 @@ public sealed class TelemetryQueries
             return new((state.Origin == DataOrigin.Synthetic ? "【演示数据】" : "") + summary,
                 parts.All(p => p.HasVerifiedData), parts.SelectMany(p => p.EvidenceFields).ToArray());
         }
-        var keys = metric is "pressure" or "temperature" ? Metrics.Wheels.Select(w => $"{metric}.{w}").ToArray() :
+        var keys = metric is "pressure" or "temperature" or "pitTemp" ? Metrics.Wheels.Select(w => $"{metric}.{w}").ToArray() :
             AccChannels.WheelGroups.TryGetValue(metric, out var wheels) ? wheels.Select(w => w.Key).ToArray() : [metric];
         if (metric is "gameFuelPerLap" or "gameFuelEstimatedLaps" &&
             state.Fields.TryGetValue(metric, out var estimate) && estimate.Quality == DataQuality.Estimated &&
@@ -174,6 +195,7 @@ public sealed class TelemetryQueries
             }
         }
         var value = state.Reading(keys[0])!;
+        if (metric == "gapAhead" && value.Unit is not ("ms" or "s")) return new("前车秒差暂不可用。", false, []);
         string Number(double? v, string format = "0.0") => v!.Value.ToString(format, CultureInfo.InvariantCulture);
         var title = fields[metric].Title;
         var text = metric switch
@@ -192,7 +214,7 @@ public sealed class TelemetryQueries
             "fuel" => $"剩余燃油 {Number(value.Value)} {value.Unit}。",
             "position" => $"目前第 {Number(value.Value, "0")} 名。",
             "lastLapTime" => $"上一圈 {Math.Floor(value.Value!.Value / 60000):0} 分 {(value.Value.Value % 60000 / 1000).ToString("00.000", CultureInfo.InvariantCulture)} 秒。",
-            "gapAhead" => $"前车时间差 {Number(value.Value / 1000, "0.00")} 秒。",
+            "gapAhead" => $"前车时间差 {Number(value.Unit == "ms" ? value.Value / 1000 : value.Value, "0.00")} 秒。",
             "gapBehind" => $"后车时间差 {Number(value.Value / 1000, "0.00")} 秒。",
             "speed" => $"当前车速 {Number(value.Value, "0")} {value.Unit}。",
             "sessionTimeLeft" when value.Unit is "ms" or "s" => $"当前阶段剩余 {Number(value.Value / (value.Unit == "ms" ? 60000 : 60), "0.0")} 分钟。",

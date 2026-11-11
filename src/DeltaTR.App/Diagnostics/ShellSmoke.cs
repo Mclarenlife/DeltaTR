@@ -34,7 +34,7 @@ internal static class ShellSmoke
         vm.UsePitHouseBridge = false;
         Require(vm.WheelConnectionHelp.Contains("串口"), "Independent wheel mode explains serial ownership");
         vm.UsePitHouseBridge = true;
-        Require(vm.WheelConnectionHelp.Contains("专用文字字段") && vm.WheelConnectionHelp.Contains("Wave Radio") && vm.WheelButtonText.Contains("开启"),
+        Require(vm.WheelConnectionHelp.Contains("专用文字字段") && vm.WheelConnectionHelp.Contains("Fullscreen Radio") && vm.WheelButtonText.Contains("开启"),
             "Dedicated field upgrade guidance is visible and display does not start automatically");
         vm.WheelSmartSwitch = false; vm.WheelAutoPopup = false;
         Require(!Settings.RadioSettings.Load(settingsFile).WheelSmartSwitch && !Settings.RadioSettings.Load(settingsFile).WheelAutoPopup,
@@ -51,11 +51,37 @@ internal static class ShellSmoke
             var expected = page.Key switch { "overview" => "OverviewView", "radio" => "RadioView", "overlay" => "OverlayView", "vocabulary" => "VocabularyView", "automation" => "AutomationView", "strategy" => "StrategyView", _ => "SettingsView" };
             Require(FindVisual<UserControl>(window)?.GetType().Name == expected, "Content view: " + page.Key);
             await render(window, Path.Combine(folder, "page-" + page.Key + ".png"));
+            var contentView = FindVisual<UserControl>(window);
+            var darkBackground = ((SolidColorBrush)window.Background).Color;
+            window.ThemeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            await render(window, Path.Combine(folder, "light-" + page.Key + ".png"));
+            Require(vm.LightTheme && Settings.RadioSettings.Load(settingsFile).LightTheme &&
+                ((SolidColorBrush)window.Background).Color != darkBackground &&
+                contentView == FindVisual<UserControl>(window) && vm.SelectedPage == page,
+                "Light theme persists and preserves the open view: " + page.Key);
+            window.ThemeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Require(!vm.LightTheme && ((SolidColorBrush)window.Background).Color == darkBackground,
+                "Dark theme restores: " + page.Key);
         }
         vm.SelectedPage = vm.Navigation.Single(page => page.Key == "vocabulary");
         vm.VocabularyFilter = "刹车温度";
         Require(vm.FilteredVocabulary.Count == 5, "Search finds aggregate and four individual brake temperatures");
         vm.VocabularyFilter = "";
+        await window.Dispatcher.InvokeAsync(window.UpdateLayout, DispatcherPriority.ContextIdle);
+        var vocabularyView = FindVisual<Views.VocabularyView>(window)!;
+        var list = vocabularyView.Fields;
+        list.SelectedItems.Clear();
+        foreach (var entry in list.Items.Cast<VocabularyEntry>().Where(row => row.Field.Key is "fuel" or "position"))
+            list.SelectedItems.Add(entry);
+        vocabularyView.PinFields.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Require(vm.FilteredVocabulary.Take(2).All(row => row.IsPinned) && list.SelectedItems.Count == 2 &&
+            Settings.RadioSettings.Load(settingsFile).PinnedVocabulary[vm.GameName].SetEquals(["fuel", "position"]), "Multi-select pin persists and keeps selection");
+        vm.VocabularyFilter = "fuel";
+        list.SelectedIndex = 0;
+        vocabularyView.UnpinFields.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        vm.VocabularyFilter = "";
+        Require(vm.FilteredVocabulary[0] is { IsPinned: true, Field.Key: "position" } &&
+            vm.FilteredVocabulary.Count(row => row.IsPinned) == 1, "Unpin filtered field without losing another pin");
         await vm.SubmitQuestionAsync("刹车温度多少");
         Require(vm.Answer.Contains("左前、右前、左后、右后") && vm.Answer.Contains("°C"), "Brake temperatures reach the radio");
         checks.Add($"Radio vocabulary: {vm.VocabularyFields.Count} selectable queries");
@@ -65,6 +91,10 @@ internal static class ShellSmoke
         Require(Settings.RadioSettings.Load(settingsFile).PhraseOverrides["airTemperature"].Contains("报告气温"), "Vocabulary aliases persist");
         await vm.SubmitQuestionAsync("报告气温");
         Require(vm.Answer.Contains("气温") && vm.Answer.Contains("【演示数据】"), "Custom alias queries the selected metric");
+        await vm.SubmitQuestionAsync("左前胎多少");
+        Require(vm.Answer.Contains("左前胎温还是胎压"), "Ask which tyre reading the driver needs");
+        await vm.SubmitQuestionAsync("胎压");
+        Require(vm.Answer.Contains("左前胎压") && !vm.Answer.Contains("依次"), "Follow-up answers only the requested wheel");
         vm.PhraseEditor = "油量";
         vm.SaveVocabularyCommand.Execute(null);
         Require(vm.VocabularyStatus.StartsWith("未保存"), "Conflicting alias rejected");
@@ -167,6 +197,13 @@ internal static class ShellSmoke
             Require(vm.AudioLevel == 0 && vm.TestMicrophoneLabel == "测试麦克风", "Meter stops and clears");
         }
         var settingsView = FindVisual<Views.SettingsView>(window)!;
+        string savedWakeWord = vm.WakeWordEdit;
+        vm.WakeWordEdit = "测试草稿";
+        window.ThemeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Require(vm.WakeWordEdit == "测试草稿" && Settings.RadioSettings.Load(settingsFile).WakeWord == savedWakeWord,
+            "Appearance switching keeps unsaved radio edits in memory only");
+        vm.WakeWordEdit = savedWakeWord;
+        window.ThemeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         async Task CheckInputsAsync(Views.SettingsView controlsView)
         {
             var picker = controlsView.AlertGameSelector;
@@ -283,6 +320,23 @@ internal static class ShellSmoke
         Require(table.Items.Count == 0, "Empty field filter");
         vm.FieldFilter = ""; vm.CompactTables = false;
         vm.ApiAddress = "http://localhost:8080/v1";
+        vm.UseTencentTts = true;
+        vm.TestSpeakerCommand.Execute(null);
+        Require(vm.SpeechOutputStatus.Contains("AppID"), "Incomplete Tencent preview explains missing credentials");
+        vm.TencentAppId = "12345"; vm.TencentSecretId = "fixture-cloud-id"; vm.TencentSecretKey = "fixture-cloud-key";
+        vm.SelectedTencentVoice = vm.TencentVoices.Single(v => v.Id == 101018);
+        settingsView.OutputRate.Value = 2;
+        vm.SaveSpeechOutputCommand.Execute(null);
+        var tts = Settings.RadioSettings.Load(settingsFile);
+        Require(tts.SpeechRate == 2 && vm.SpeechRateLabel == "快速", "Output rate slider and saved preference");
+        Require(tts.UseTencentTts && tts.TencentVoiceId == vm.SelectedTencentVoice.Id &&
+            Settings.RadioSettings.Decrypt(tts.ProtectedTencentKey) == vm.TencentSecretKey &&
+            Settings.RadioSettings.Decrypt(tts.ProtectedTencentId) == vm.TencentSecretId &&
+            !File.ReadAllText(settingsFile).Contains("fixture-cloud-") && vm.OutputDescription.Contains("智靖"),
+            "Tencent voice selection persists with protected credentials");
+        vm.UseTencentTts = false;
+        vm.SaveSpeechOutputCommand.Execute(null);
+        Require(!vm.OutputDescription.Contains("腾讯云"), "Local speech restored after disabling cloud output");
         vm.ApiModel = "smoke-model";
         vm.ApiKeyEdit = "synthetic-smoke-key";
         Require(!vm.EnhanceVoice && !vm.ReduceNoise, "Existing settings leave microphone effects off");
@@ -393,7 +447,7 @@ internal static class ShellSmoke
             {
                 vm.SelectedPage = vm.Navigation.Single(p => p.Key == "vocabulary");
                 vm.VocabularyFilter = "Precipitation";
-                Require(vm.FilteredVocabulary.Any(f => f.Key == "IR.Var.Precipitation"), "iRacing reference variable searchable by SDK name");
+                Require(vm.FilteredVocabulary.Any(f => f.Field.Key == "IR.Var.Precipitation"), "iRacing reference variable searchable by SDK name");
                 vm.SelectedField = vm.VocabularyFields.Single(f => f.Key == "IR.Var.Precipitation");
                 Require(vm.PhraseEditor.Contains("下雨吗") && vm.SelectedField.Detail.Contains("原始单位"),
                     "iRacing weather aliases and source metadata shown");
@@ -402,10 +456,10 @@ internal static class ShellSmoke
                 vm.VocabularyFilter = "";
                 vm.SelectedPage = vm.Navigation.Single(p => p.Key == "radio");
                 var previousQuestion = vm.LastQuestion;
-                for (int i = 0; i < 90 && !vm.HasRaceAlert; i++) await Task.Delay(200);
+                for (int i = 0; i < 125 && !vm.LastRaceAlert.Contains("黄旗"); i++) await Task.Delay(200);
                 Require(vm.LastRaceAlert.Contains("黄旗") && vm.BubbleText == vm.LastRaceAlert &&
                     vm.LastQuestion == previousQuestion && vm.Answer.Contains("燃油"),
-                    "Simulated yellow reaches the radio and overlay without replacing the driver's query");
+                    $"Simulated yellow reaches the radio and overlay without replacing the driver's query (alert={vm.LastRaceAlert}, bubble={vm.BubbleText}, answer={vm.Answer})");
             }
         }
         await vm.SelectGameAsync(acc); await vm.StartAsync(true); await Task.Delay(300);
